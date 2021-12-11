@@ -1,5 +1,9 @@
 package codeofcarbon.account.service;
 
+import codeofcarbon.account.exception.DuplicatePeriodException;
+import codeofcarbon.account.exception.IncorrectPeriodFormatException;
+import codeofcarbon.account.exception.NegativeSalaryException;
+import codeofcarbon.account.exception.WrongPeriodDateException;
 import codeofcarbon.account.model.Payment;
 import codeofcarbon.account.model.User;
 import codeofcarbon.account.model.dto.PaymentDTO;
@@ -26,7 +30,7 @@ public class PaymentService {
         this.userService = userService;
     }
 
-    public List<PaymentDTO> getEmployeePayments(User user, String period) throws Exception {
+    public List<PaymentDTO> getEmployeePayments(User user, String period) {
         if (period == null) {
             return paymentRepository.findAllByEmplEmailOrderByPeriodDesc(user.getEmail()).stream()
                     .map(payment -> PaymentDTO.mapResponseForAuthenticatedUser(payment, user))
@@ -35,10 +39,10 @@ public class PaymentService {
             var givenPeriod = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy"));
             var givenPeriodPayment = paymentRepository.findAllByEmplEmailOrderByPeriodDesc(user.getEmail()).stream()
                     .filter(payment -> payment.getPeriod().equals(givenPeriod))
-                    .findFirst().orElseThrow(() -> new Exception());
+                    .findFirst().orElseThrow(WrongPeriodDateException::new);
             return List.of(PaymentDTO.mapResponseForAuthenticatedUser(givenPeriodPayment, user));
-        } catch (Exception ignored) {
-            throw new Exception();
+        } catch (DateTimeParseException ignored) {
+            throw new IncorrectPeriodFormatException();
         }
     }
 
@@ -61,17 +65,17 @@ public class PaymentService {
             validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")));
             if (userService.loadUserByUsername(payroll.get("employee")) != null)
                 validPayment.setEmpl((User) userService.loadUserByUsername(payroll.get("employee")));
-            if (payroll.get("salary").startsWith("-")) new Exception();
+            if (payroll.get("salary").startsWith("-")) throw new NegativeSalaryException();
             else validPayment.setSalary(Long.parseLong(payroll.get("salary")));
         } catch (DateTimeParseException ignored) {
-            new Exception();
+            throw new IncorrectPeriodFormatException();
         }
         var duplicates = paymentRepository.findAll().stream()
                 .filter(payslip -> payslip.getEmpl().getEmail().equalsIgnoreCase(validPayment.getEmpl().getEmail())
                                    && payslip.getPeriod().equals(validPayment.getPeriod()))
                 .collect(Collectors.toList());
         if (updatingData) duplicates.forEach(payment -> payment.setSalary(Long.parseLong(payroll.get("salary"))));
-        if (!updatingData && duplicates.size() != 0) new Exception();
+        if (!updatingData && duplicates.size() != 0) throw new DuplicatePeriodException();
         return validPayment;
     }
 }

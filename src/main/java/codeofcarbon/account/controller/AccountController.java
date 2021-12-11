@@ -35,9 +35,7 @@ public class AccountController {
     public ResponseEntity<Object> changePassword(@AuthenticationPrincipal UserDetails details,
                                                  @RequestBody Map<String, String> request) {
         if (details == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        var newPassword = request.get("new_password");
-        userService.checkPasswordRequirements(newPassword, details.getPassword());
-        userService.updatePassword(newPassword, (User) details);
+        userService.updatePassword(request.get("new_password"), (User) details);
         return ResponseEntity.ok(Map.of(
                 "email", details.getUsername(),
                 "status", "The password has been updated successfully"));
