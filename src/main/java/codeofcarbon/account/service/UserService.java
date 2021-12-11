@@ -4,13 +4,11 @@ import codeofcarbon.account.model.Role;
 import codeofcarbon.account.model.User;
 import codeofcarbon.account.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 public class UserService implements UserDetailsService {
@@ -31,8 +29,7 @@ public class UserService implements UserDetailsService {
 
     public User addNewUser(User user) {
         if (userRepository.findAll().stream()
-                .anyMatch(u -> user.getEmail().equalsIgnoreCase(u.getEmail())))
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User exist!");
+                .noneMatch(u -> user.getEmail().equalsIgnoreCase(u.getEmail())))
         user.setEmail(user.getEmail().toLowerCase());
         user.setPassword(encoder.encode(user.getPassword()));
         user.grantAuthority(Role.USER);
