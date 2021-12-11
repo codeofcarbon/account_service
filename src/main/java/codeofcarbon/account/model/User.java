@@ -39,19 +39,16 @@ public class User implements UserDetails {
     @JsonIgnore
     private boolean enabled;
     @JsonIgnore
-    @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Role> rolesAndAuthorities = new ArrayList<>();
+    private List<GrantedAuthority> rolesAndAuthorities = new ArrayList<>();
 
     @Override
     public List<GrantedAuthority> getAuthorities() {
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        rolesAndAuthorities.forEach(role -> authorities.add(new SimpleGrantedAuthority(role.toString())));
-        return authorities;
+        return rolesAndAuthorities;
     }
 
     public void grantAuthority(Role role) {
-        rolesAndAuthorities.add(role);
+        rolesAndAuthorities.add(new SimpleGrantedAuthority(role.toString()));
     }
 
     @Override
