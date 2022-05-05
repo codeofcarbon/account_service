@@ -5,11 +5,13 @@ import com.codeofcarbon.account.model.Role;
 import com.codeofcarbon.account.model.User;
 import com.codeofcarbon.account.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -39,7 +41,7 @@ public class UserService implements UserDetailsService {
         var validPassword = checkPasswordRequirements(user.getPassword(), "");
         user.setPassword(encoder.encode(validPassword));
         user.setEmail(user.getEmail().toLowerCase());
-        user.grantAuthority(Role.USER);
+        user.grantAuthority(Role.ROLE_USER);
         return userRepository.save(user);
     }
 
@@ -51,9 +53,13 @@ public class UserService implements UserDetailsService {
     }
 
     private String checkPasswordRequirements(String newPassword, String currentPassword) {
-        if (newPassword.length() < 12) throw new ShortPasswordException();
-        if (breachedPasswords.contains(newPassword)) throw new BreachedPasswordException();
-        if (encoder.matches(newPassword, currentPassword)) throw new IdenticalPasswordException();
+        if (newPassword.length() < 12)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password length must be at least 12 chars!");
+        if (breachedPasswords.contains(newPassword))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password is in the hacker's database!");
+        if (encoder.matches(newPassword, currentPassword))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The passwords must be different!");
         return newPassword;
     }
+
 }

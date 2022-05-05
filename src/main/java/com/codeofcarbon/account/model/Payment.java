@@ -11,10 +11,7 @@ import java.time.YearMonth;
 import java.util.Objects;
 
 @Entity
-@Getter
-@Setter
-@ToString
-@RequiredArgsConstructor
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
@@ -24,22 +21,9 @@ public class Payment {
     @JsonIgnore
     private long id;
     @ManyToOne
-    private User empl;
+    private User user;
     @JsonFormat(pattern = "MM-yyyy")
     private YearMonth period;
     @PositiveOrZero
     private long salary;
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Payment payment = (Payment) o;
-        return Objects.equals(id, payment.id);
-    }
-
-    @Override
-    public int hashCode() {
-        return getClass().hashCode();
-    }
 }

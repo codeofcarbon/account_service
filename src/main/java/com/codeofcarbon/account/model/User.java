@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import javax.persistence.*;
 import javax.validation.constraints.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Entity
 @Data
@@ -40,15 +41,17 @@ public class User implements UserDetails {
     private boolean enabled;
     @JsonIgnore
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<GrantedAuthority> rolesAndAuthorities = new ArrayList<>();
+    private List<Role> roles = new ArrayList<>();
 
     @Override
     public List<GrantedAuthority> getAuthorities() {
-        return rolesAndAuthorities;
+        return roles.stream()
+                .map(role -> new SimpleGrantedAuthority(role.toString()))
+                .collect(Collectors.toList());
     }
 
     public void grantAuthority(Role role) {
-        rolesAndAuthorities.add(new SimpleGrantedAuthority(role.toString()));
+        roles.add(role);
     }
 
     @Override

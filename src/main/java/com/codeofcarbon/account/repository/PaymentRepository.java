@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
-    List<Payment> findAllByEmplEmailOrderByPeriodDesc(String employee_email);
+    List<Payment> findAllByUserEmailOrderByPeriodDesc(String user_email);
 }
