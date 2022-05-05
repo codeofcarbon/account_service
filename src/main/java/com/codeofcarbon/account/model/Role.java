@@ -1,5 +1,5 @@
 package com.codeofcarbon.account.model;
 
 public enum Role {
-    USER, ACCOUNTANT, ADMIN
+    ROLE_ACCOUNTANT, ROLE_ADMINISTRATOR, ROLE_USER
 }

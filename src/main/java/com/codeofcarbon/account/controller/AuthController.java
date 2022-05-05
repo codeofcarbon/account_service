@@ -15,22 +15,22 @@ import java.util.Map;
 
 @Controller
 @RequestMapping("/api")
-public class AccountController {
+public class AuthController {
     private final UserService userService;
 
     @Autowired
-    public AccountController(UserService userService) {
+    public AuthController(UserService userService) {
         this.userService = userService;
     }
 
-    //  new user registering
+    // new user registering
     @PostMapping("/signup")
     public ResponseEntity<UserDTO> signUp(@Validated @RequestBody User user) {
         var newUser = userService.addNewUser(user);
         return ResponseEntity.ok(UserDTO.mapToUserDTO(newUser));
     }
 
-    //  changing user password after successful authentication
+    // changing user password after successful authentication
     @PostMapping("/changepass")
     public ResponseEntity<Object> changePassword(@AuthenticationPrincipal UserDetails details,
                                                  @RequestBody Map<String, String> request) {

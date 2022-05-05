@@ -1,9 +1,7 @@
 package com.codeofcarbon.account.model.dto;
 
-import com.codeofcarbon.account.model.Payment;
-import com.codeofcarbon.account.model.User;
-import lombok.Builder;
-import lombok.Getter;
+import com.codeofcarbon.account.model.*;
+import lombok.*;
 
 import java.time.format.DateTimeFormatter;
 
@@ -15,17 +13,12 @@ public class PaymentDTO {
     private final String period;
     private final String salary;
 
-    public static PaymentDTO mapResponseForAuthenticatedUser(Payment payment, User employee) {
-        var paymentAmount = String.valueOf(payment.getSalary());
-        var dollars = paymentAmount.length() > 2 ?
-                paymentAmount.substring(0, paymentAmount.length() - 2) : "0";
-        var cents = paymentAmount.substring(paymentAmount.length() - 2);
-
+    public static PaymentDTO mapToPaymentDTO(Payment payment, User user) {
         return PaymentDTO.builder()
-                .name(employee.getName())
-                .lastname(employee.getLastname())
+                .name(user.getName())
+                .lastname(user.getLastname())
                 .period(DateTimeFormatter.ofPattern("MMMM-yyyy").format(payment.getPeriod()))
-                .salary(String.format("%s dollar(s) %s cent(s)", dollars, cents))
+                .salary(String.format("%s dollar(s) %s cent(s)", payment.getSalary() / 100, payment.getSalary() % 100))
                 .build();
     }
 }
