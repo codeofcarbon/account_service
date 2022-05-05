@@ -1,8 +1,8 @@
-package codeofcarbon.account.controller;
+package com.codeofcarbon.account.controller;
 
-import codeofcarbon.account.model.User;
-import codeofcarbon.account.model.dto.UserDTO;
-import codeofcarbon.account.service.UserService;
+import com.codeofcarbon.account.model.User;
+import com.codeofcarbon.account.model.dto.UserDTO;
+import com.codeofcarbon.account.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;

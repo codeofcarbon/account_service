@@ -1,7 +1,7 @@
-package codeofcarbon.account.controller;
+package com.codeofcarbon.account.controller;
 
-import codeofcarbon.account.model.User;
-import codeofcarbon.account.service.PaymentService;
+import com.codeofcarbon.account.model.User;
+import com.codeofcarbon.account.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,7 +24,7 @@ public class EmployeeController {
     //    gives access to the payroll of an employee
     @GetMapping("/empl/payment")
     public ResponseEntity<Object> showPayments(@RequestParam(value = "period", required = false) String period,
-                                               @AuthenticationPrincipal UserDetails details) throws Exception {
+                                               @AuthenticationPrincipal UserDetails details) {
         var response = paymentService.getEmployeePayments((User) details, period);
         return period == null ? ResponseEntity.ok(response) : ResponseEntity.ok(response.get(0));
     }

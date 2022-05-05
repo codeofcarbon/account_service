@@ -1,13 +1,13 @@
-package codeofcarbon.account.service;
+package com.codeofcarbon.account.service;
 
-import codeofcarbon.account.exception.DuplicatePeriodException;
-import codeofcarbon.account.exception.IncorrectPeriodFormatException;
-import codeofcarbon.account.exception.NegativeSalaryException;
-import codeofcarbon.account.exception.WrongPeriodDateException;
-import codeofcarbon.account.model.Payment;
-import codeofcarbon.account.model.User;
-import codeofcarbon.account.model.dto.PaymentDTO;
-import codeofcarbon.account.repository.PaymentRepository;
+import com.codeofcarbon.account.exception.DuplicatePeriodException;
+import com.codeofcarbon.account.exception.IncorrectPeriodFormatException;
+import com.codeofcarbon.account.exception.NegativeSalaryException;
+import com.codeofcarbon.account.exception.WrongPeriodDateException;
+import com.codeofcarbon.account.model.Payment;
+import com.codeofcarbon.account.model.User;
+import com.codeofcarbon.account.model.dto.PaymentDTO;
+import com.codeofcarbon.account.repository.PaymentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

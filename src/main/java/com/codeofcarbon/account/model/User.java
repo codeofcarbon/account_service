@@ -1,4 +1,4 @@
-package codeofcarbon.account.model;
+package com.codeofcarbon.account.model;
 
 import com.fasterxml.jackson.annotation.*;
 import lombok.*;

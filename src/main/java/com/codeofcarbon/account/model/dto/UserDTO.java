@@ -1,6 +1,6 @@
-package codeofcarbon.account.model.dto;
+package com.codeofcarbon.account.model.dto;
 
-import codeofcarbon.account.model.User;
+import com.codeofcarbon.account.model.User;
 import lombok.Builder;
 import lombok.Getter;
 

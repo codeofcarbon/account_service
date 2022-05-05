@@ -1,4 +1,4 @@
-package codeofcarbon.account;
+package com.codeofcarbon.account;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

@@ -1,9 +1,9 @@
-package codeofcarbon.account.service;
+package com.codeofcarbon.account.service;
 
-import codeofcarbon.account.exception.*;
-import codeofcarbon.account.model.Role;
-import codeofcarbon.account.model.User;
-import codeofcarbon.account.repository.UserRepository;
+import com.codeofcarbon.account.exception.*;
+import com.codeofcarbon.account.model.Role;
+import com.codeofcarbon.account.model.User;
+import com.codeofcarbon.account.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

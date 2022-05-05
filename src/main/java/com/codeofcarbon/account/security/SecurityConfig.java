@@ -1,4 +1,4 @@
-package codeofcarbon.account.security;
+package com.codeofcarbon.account.security;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;

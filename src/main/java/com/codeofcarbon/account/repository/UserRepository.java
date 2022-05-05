@@ -1,6 +1,6 @@
-package codeofcarbon.account.repository;
+package com.codeofcarbon.account.repository;
 
-import codeofcarbon.account.model.User;
+import com.codeofcarbon.account.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
