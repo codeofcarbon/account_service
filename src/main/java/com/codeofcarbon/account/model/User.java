@@ -18,30 +18,28 @@ import java.util.stream.Collectors;
 public class User implements UserDetails {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private long id;
-    @NotBlank(message = "name is required")
+    @NotBlank
     private String name;
-    @NotBlank(message = "lastname is required")
+    @NotBlank
     private String lastname;
     @Email(regexp = ".*@acme.com$")
-    @NotBlank(message = "email is required")
     private String email;
-    @NotBlank(message = "password is required")
+    @NotBlank
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
-    @JsonIgnore
-    private boolean accountNonExpired;
-    @JsonIgnore
-    private boolean accountNonLocked;
-    @JsonIgnore
-    private boolean credentialsNonExpired;
-    @JsonIgnore
-    private boolean enabled;
-    @JsonIgnore
+    @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Role> roles = new ArrayList<>();
+
+    //    @Column(name = "enabled")
+    private boolean enabled = true;
+    //    @Column(name = "account_non_locked")
+    private boolean accountNonLocked = true;
+    private boolean accountNonExpired = true;
+    private boolean credentialsNonExpired = true;
 
     @Override
     public List<GrantedAuthority> getAuthorities() {
@@ -65,22 +63,21 @@ public class User implements UserDetails {
     }
 
     @Override
-    public boolean isAccountNonExpired() {
-        return true;//accountNonExpired;
+    public boolean isEnabled() {
+        return enabled;
     }
 
     @Override
     public boolean isAccountNonLocked() {
-        return true;//accountNonLocked;
+        return accountNonLocked;
     }
 
+    @Override
+    public boolean isAccountNonExpired() {
+        return accountNonExpired;
+    }
     @Override
     public boolean isCredentialsNonExpired() {
-        return true;//credentialsNonExpired;
-    }
-
-    @Override
-    public boolean isEnabled() {
-        return true;//enabled;
+        return credentialsNonExpired;
     }
 }

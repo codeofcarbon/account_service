@@ -3,9 +3,10 @@ package com.codeofcarbon.account.service;
 import com.codeofcarbon.account.model.*;
 import com.codeofcarbon.account.model.dto.PaymentDTO;
 import com.codeofcarbon.account.repository.PaymentRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.YearMonth;
@@ -14,15 +15,11 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
+@Transactional
+@RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
     private final UserService userService;
-
-    @Autowired
-    public PaymentService(PaymentRepository paymentRepository, UserService userService) {
-        this.paymentRepository = paymentRepository;
-        this.userService = userService;
-    }
 
     public List<PaymentDTO> getEmployeePayments(User user, String period) {
         var paymentsStream = paymentRepository.findAllByUserEmailOrderByPeriodDesc(user.getEmail()).stream();
@@ -32,7 +29,7 @@ public class PaymentService {
         if (!period.matches("(0[1-9]|1[0-2])-\\d{4}"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
-        var yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy"));
+        var yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy")).toString();
         var periodPayment = paymentsStream.filter(payment -> payment.getPeriod().equals(yearMonth)).findAny();
         if (periodPayment.isPresent())
             return List.of(PaymentDTO.mapToPaymentDTO(periodPayment.get(), user));
@@ -55,7 +52,7 @@ public class PaymentService {
             validPayment.setUser((User) userService.loadUserByUsername(payroll.get("employee")));
 
         if (payroll.get("period").matches("(0[1-9]|1[0-2])-\\d{4}"))
-            validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")));
+            validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")).toString());
         else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
         if (payroll.get("salary").charAt(0) != '-')

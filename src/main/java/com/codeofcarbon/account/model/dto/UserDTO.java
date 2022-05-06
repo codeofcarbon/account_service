@@ -1,6 +1,7 @@
 package com.codeofcarbon.account.model.dto;
 
-import com.codeofcarbon.account.model.*;
+import com.codeofcarbon.account.model.Role;
+import com.codeofcarbon.account.model.User;
 import lombok.*;
 
 import java.util.List;
@@ -9,7 +10,7 @@ import java.util.stream.Collectors;
 @Getter
 @Builder
 public class UserDTO {
-    public long id;
+    private final long id;
     private final String name;
     private final String lastname;
     private final String email;

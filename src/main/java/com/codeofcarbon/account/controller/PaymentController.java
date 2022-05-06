@@ -2,7 +2,7 @@ package com.codeofcarbon.account.controller;
 
 import com.codeofcarbon.account.model.User;
 import com.codeofcarbon.account.service.PaymentService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,13 +12,9 @@ import java.util.*;
 
 @RestController
 @RequestMapping("api")
+@RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
-
-    @Autowired
-    public PaymentController(PaymentService paymentService) {
-        this.paymentService = paymentService;
-    }
 
     // gives access to the employee payrolls
     @GetMapping("/empl/payment")
