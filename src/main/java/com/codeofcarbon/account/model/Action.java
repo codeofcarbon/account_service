@@ -7,4 +7,5 @@ public enum Action {
     LOGIN_FAILED,                       // failed authentication
     GRANT_ROLE,                         // role is granted to a user
     REMOVE_ROLE,                        // role has been revoked
+    DELETE_USER                        // administrator has deleted a user
 }
