@@ -1,14 +1,11 @@
 package com.codeofcarbon.account.repository;
 
-import com.codeofcarbon.account.model.Payment;
-import com.codeofcarbon.account.model.User;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
+import com.codeofcarbon.account.model.*;
+import org.springframework.data.jpa.repository.*;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
