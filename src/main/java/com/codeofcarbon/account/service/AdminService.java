@@ -20,40 +20,42 @@ public class AdminService {
     private final AuditService auditService;
     private final UserService userService;
     private final UserRepository userRepository;
+    public enum Operation {
+        GRANT, REMOVE, LOCK, UNLOCK
+    }
 
     public List<UserDTO> getAllUsersData() {
-        return userRepository.findAll().stream()
-                .sorted(Comparator.comparingLong(User::getId))
+        return userRepository.findAllOrderById().stream()
                 .map(UserDTO::mapToUserDTO)
                 .collect(Collectors.toList());
     }
 
     public void removeUser(String userEmail, String requestPath, String adminEmail) {
-        User userToRemove;
-        var userDetails = userService.loadUserByUsername(userEmail);
-
-        if (userDetails != null) userToRemove = (User) userDetails;
-        else throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!");
-
-        if (userToRemove.getRoles().contains(Role.ROLE_ADMINISTRATOR))
+        var user = userRepository.findByEmail(userEmail.toLowerCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+        if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
-
         auditService.logEvent(Action.DELETE_USER, adminEmail, userEmail, requestPath);
-        userRepository.delete(userToRemove);
+        userRepository.delete(user);
     }
 
     public Object prepareOperationOnUser(Map<String, String> command, String requestPath, String adminEmail) {
-        var userDetails = userService.loadUserByUsername(command.get("user"));
-        if (userDetails == null) throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!");
-        var user = (User) userDetails;
+        var user = userRepository.findByEmail(command.get("user").toLowerCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
         var operation = Arrays.stream(Operation.values())
                 .filter(op -> op.name().equals(command.get("operation")))
                 .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Operation aborted"));
 
+        if (Operation.LOCK == operation || Operation.UNLOCK == operation) {
+            var updatedUser = performTheOperation(operation, user, null, requestPath, adminEmail);
+            return Map.of("status", String.format("User %s %s!", updatedUser.getEmail(),
+                    Operation.LOCK == operation ? "locked" : "unlocked"));
+        } else {
             var role = Arrays.stream(Role.values())
                     .filter(r -> r.name().contains(command.get("role")))
                     .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found!"));
             return performTheOperation(operation, user, role, requestPath, adminEmail);
+        }
     }
 
     private User performTheOperation(Operation operation, User user, @Nullable Role role,
@@ -82,6 +84,19 @@ public class AdminService {
                 message = String.format("Remove role %s from %s", role.name().split("_")[1], user.getEmail());
                 auditService.logEvent(Action.REMOVE_ROLE, adminEmail, message, requestPath);
                 break;
+            case LOCK:
+                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't lock the ADMINISTRATOR!");
+
+                user.setAccountNonLocked(false);
+                message = String.format("Lock user %s", user.getEmail());
+                auditService.logEvent(Action.LOCK_USER, user.getEmail(), message, requestPath);
+                break;
+            case UNLOCK:
+                user.setAccountNonLocked(true);
+                user.setFailedAttempt(0);
+                message = String.format("Unlock user %s", user.getEmail());
+                auditService.logEvent(Action.UNLOCK_USER, adminEmail, message, requestPath);
         }
         return userRepository.save(user);
     }
