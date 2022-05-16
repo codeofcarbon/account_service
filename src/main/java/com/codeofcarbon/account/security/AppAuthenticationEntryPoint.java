@@ -18,7 +18,7 @@ import java.util.Base64;
 
 @Component
 @RequiredArgsConstructor
-public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint {
+public class AppAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final AuditService auditService;
     private final UserService userService;
     private final UserRepository userRepository;

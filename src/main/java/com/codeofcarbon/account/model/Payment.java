@@ -1,19 +1,17 @@
 package com.codeofcarbon.account.model;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.*;
 import lombok.*;
 
 import javax.persistence.*;
 import javax.validation.constraints.PositiveOrZero;
+import java.time.LocalDate;
 
 @Entity
-@Data
 @Getter
 @Setter
 @ToString
 @RequiredArgsConstructor
-//@NoArgsConstructor
 @AllArgsConstructor
 public class Payment {
 
@@ -24,7 +22,7 @@ public class Payment {
     @ManyToOne
     private User user;
     @JsonFormat(pattern = "MM-yyyy")
-    private String period;
+    private LocalDate period;
     @PositiveOrZero
     private long salary;
 }

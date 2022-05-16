@@ -2,29 +2,21 @@ package com.codeofcarbon.account.security;
 
 import com.codeofcarbon.account.service.UserService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.*;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-
-import javax.sql.DataSource;
 
 @Configuration
 @EnableWebSecurity(debug = true)
 @RequiredArgsConstructor
-//@EnableGlobalMethodSecurity(prePostEnabled = false, securedEnabled = true)            // todo -->>> change to that ???
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
-    private final CustomAuthenticationEntryPoint authenticationEntryPoint;
-    private final CustomAccessDeniedHandler accessDeniedHandler;
+    private final AppAuthenticationEntryPoint authenticationEntryPoint;
+    private final AppAccessDeniedHandler accessDeniedHandler;
+    private final AppPasswordEncoder encoder;
     private final UserService userDetailsService;
-    private final MyPasswordEncoder encoder;
-    final DataSource dataSource;
 
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {

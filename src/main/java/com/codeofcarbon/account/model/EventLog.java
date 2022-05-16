@@ -8,12 +8,11 @@ import javax.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Data
 @Getter
 @Setter
 @ToString
+@Builder
 @RequiredArgsConstructor
-//@NoArgsConstructor
 @AllArgsConstructor
 public class EventLog {
 
@@ -21,7 +20,7 @@ public class EventLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private long id;
-    @DateTimeFormat//(iso = DateTimeFormat.ISO.DATE_TIME)
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private LocalDateTime date;
     @Enumerated(EnumType.STRING)
     private Action action;

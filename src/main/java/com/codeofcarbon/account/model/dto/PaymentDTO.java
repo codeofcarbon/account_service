@@ -18,7 +18,7 @@ public class PaymentDTO {
         return PaymentDTO.builder()
                 .name(user.getName())
                 .lastname(user.getLastname())
-                .period(DateTimeFormatter.ofPattern("MMMM-yyyy").format(YearMonth.parse(payment.getPeriod())))
+                .period(payment.getPeriod().format(DateTimeFormatter.ofPattern("MMMM-yyyy")))
                 .salary(String.format("%s dollar(s) %s cent(s)", payment.getSalary() / 100, payment.getSalary() % 100))
                 .build();
     }

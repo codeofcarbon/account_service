@@ -13,7 +13,7 @@ import java.io.IOException;
 
 @Component
 @RequiredArgsConstructor
-public class CustomAccessDeniedHandler implements AccessDeniedHandler {
+public class AppAccessDeniedHandler implements AccessDeniedHandler {
     private final AuditService auditService;
 
     @Override

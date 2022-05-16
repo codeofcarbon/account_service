@@ -7,32 +7,28 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.*;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Controller;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
-@Controller
-@RequestMapping("/api")
+@RestController
+@RequestMapping("/api/auth")
+@ResponseStatus(HttpStatus.OK)
 @RequiredArgsConstructor
 public class AuthController {
     private final UserService userService;
+    private final HttpServletRequest request;
 
     @PostMapping("/signup")
-    public ResponseEntity<UserDTO> signUp(@Validated @RequestBody User user,
-                                          HttpServletRequest request) {
-        var newUser = userService.addNewUser(user, request.getServletPath());
-        return ResponseEntity.ok(UserDTO.mapToUserDTO(newUser));
+    public UserDTO signUp(@Validated @RequestBody User user) {
+        return userService.addNewUser(user, request.getRequestURI());
     }
 
     @PostMapping("/changepass")
-    public ResponseEntity<Object> changePassword(@AuthenticationPrincipal UserDetails details,
-                                                 @RequestBody Map<String, String> requestJson,
-                                                 HttpServletRequest request) {
-        userService.updatePassword(requestJson.get("new_password"), ((User) details).getEmail(), request.getServletPath());
-        return ResponseEntity.ok(Map.of("email", details.getUsername(),
-                "status", "The password has been updated successfully"));
+    public Map<String, String> changePassword(@AuthenticationPrincipal UserDetails user,
+                                              @RequestBody Map<String, String> req) {
+        return userService.updatePassword(req, user.getUsername(), request.getRequestURI());
     }
 }
