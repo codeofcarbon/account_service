@@ -4,15 +4,14 @@ import com.codeofcarbon.account.model.Action;
 import com.codeofcarbon.account.model.Role;
 import com.codeofcarbon.account.model.User;
 import com.codeofcarbon.account.repository.UserRepository;
+import com.codeofcarbon.account.security.MyPasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -21,11 +20,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
     public static String foundEmail;
-    public static String notFoundEmail;
-    public static String requestPath;
+    public static final int MAX_FAILED_ATTEMPTS = 4;
     private final AuditService auditService;
     private final UserRepository userRepository;
-    private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(BCryptPasswordEncoder.BCryptVersion.$2A, 13);
+    private final MyPasswordEncoder encoder;
     private final List<String> breachedPasswords =
             List.of("PasswordForJanuary", "PasswordForFebruary", "PasswordForMarch", "PasswordForApril",
                     "PasswordForMay", "PasswordForJune", "PasswordForJuly", "PasswordForAugust",
@@ -33,22 +31,16 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) {
-        requestPath = ServletUriComponentsBuilder.fromCurrentRequest().build().getPath();
-
-        var details = userRepository.findByEmail(email.toLowerCase());
-        if (details != null) {
-            foundEmail = email.toLowerCase();
-            return details;
-        } else {
-            notFoundEmail = email.toLowerCase();
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!");
-        }
+        foundEmail = email.toLowerCase();
+        return userRepository.findByEmail(email.toLowerCase())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
     }
 
     public User addNewUser(User user, String requestPath) {
-        var userToAdd = userRepository.findAll().stream()
-                .filter(u -> user.getEmail().equalsIgnoreCase(u.getEmail())).findAny();
-        if (userToAdd.isPresent()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User exist!");
+        userRepository.findByEmail(user.getEmail().toLowerCase())
+                .ifPresent(userToAdd -> {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User exist!");
+                });
 
         var validPassword = checkPasswordRequirements(user.getPassword(), "");
         user.setPassword(encoder.encode(validPassword));
@@ -56,17 +48,18 @@ public class UserService implements UserDetailsService {
         user.grantAuthority(userRepository.findAll().isEmpty() ? Role.ROLE_ADMINISTRATOR : Role.ROLE_USER);
 
         auditService.logEvent(Action.CREATE_USER, null, user.getEmail(), requestPath);
+
         return userRepository.save(user);
     }
 
     public void updatePassword(String newPassword, String userEmail, String requestPath) {
-        var user = (User) loadUserByUsername(userEmail);
+        var user = userRepository.findUserByEmailIgnoreCase(userEmail);
         var validPassword = checkPasswordRequirements(newPassword, user.getPassword());
         user.setPassword(encoder.encode(validPassword));
 
-        userRepository.save(user);
-
         auditService.logEvent(Action.CHANGE_PASSWORD, user.getEmail(), user.getEmail(), requestPath);
+
+        userRepository.save(user);
     }
 
     private String checkPasswordRequirements(String newPassword, String currentPassword) {
@@ -77,5 +70,17 @@ public class UserService implements UserDetailsService {
         if (encoder.matches(newPassword, currentPassword))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The passwords must be different!");
         return newPassword;
+    }
+
+    public void increaseFailedAttempts(User user, String path) {
+        user.setFailedAttempt(user.getFailedAttempt() + 1);
+        if (user.getFailedAttempt() > MAX_FAILED_ATTEMPTS) lockUser(user, path);
+        userRepository.save(user);
+    }
+
+    public void lockUser(User user, String path) {
+        user.setAccountNonLocked(false);
+        auditService.logEvent(Action.BRUTE_FORCE, user.getEmail(), path, path);
+        auditService.logEvent(Action.LOCK_USER, user.getEmail(), String.format("Lock user %s", user.getEmail()), path);
     }
 }

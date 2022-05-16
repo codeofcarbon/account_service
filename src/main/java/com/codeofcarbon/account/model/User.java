@@ -12,8 +12,10 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Entity
-@Data
-@NoArgsConstructor
+@Getter
+@Setter
+@ToString
+@RequiredArgsConstructor
 @AllArgsConstructor
 public class User implements UserDetails {
 
@@ -32,11 +34,10 @@ public class User implements UserDetails {
     private String password;
     @Enumerated(EnumType.STRING)
     @ElementCollection(fetch = FetchType.EAGER)
-    private List<Role> roles = new ArrayList<>();
+    private Set<Role> roles = new HashSet<>();
 
-    //    @Column(name = "enabled")
+    private int failedAttempt;
     private boolean enabled = true;
-    //    @Column(name = "account_non_locked")
     private boolean accountNonLocked = true;
     private boolean accountNonExpired = true;
     private boolean credentialsNonExpired = true;
@@ -76,6 +77,7 @@ public class User implements UserDetails {
     public boolean isAccountNonExpired() {
         return accountNonExpired;
     }
+
     @Override
     public boolean isCredentialsNonExpired() {
         return credentialsNonExpired;

@@ -7,5 +7,8 @@ public enum Action {
     LOGIN_FAILED,                       // failed authentication
     GRANT_ROLE,                         // role is granted to a user
     REMOVE_ROLE,                        // role has been revoked
-    DELETE_USER                        // administrator has deleted a user
+    LOCK_USER,                          // administrator has locked a user
+    UNLOCK_USER,                        // administrator has unlocked a user
+    DELETE_USER,                        // administrator has deleted a user
+    BRUTE_FORCE                         // user has been blocked on suspicion of a brute force attack
 }

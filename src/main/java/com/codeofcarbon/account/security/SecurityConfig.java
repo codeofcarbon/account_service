@@ -18,51 +18,27 @@ import javax.sql.DataSource;
 @Configuration
 @EnableWebSecurity(debug = true)
 @RequiredArgsConstructor
-//@EnableGlobalMethodSecurity(prePostEnabled = false, securedEnabled = true)
+//@EnableGlobalMethodSecurity(prePostEnabled = false, securedEnabled = true)            // todo -->>> change to that ???
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final CustomAuthenticationEntryPoint authenticationEntryPoint;
     private final CustomAccessDeniedHandler accessDeniedHandler;
-    private final UserService detailsService;
+    private final UserService userDetailsService;
     private final MyPasswordEncoder encoder;
     final DataSource dataSource;
 
-    /*
-//    @Autowired CustomAuthenticationEntryPoint authenticationEntryPoint;
-//    @Autowired CustomAccessDeniedHandler accessDeniedHandler;
-//    @Autowired UserService detailsService;
-//    @Autowired MyPasswordEncoder encoder;
-//    @Autowired DataSource dataSource;
-
-//    private final CustomAuthenticationProvider customAuthenticationProvider;
-//    private final CustomAuthenticationFailureHandler authenticationFailureHandler;
-//    private final CustomAuthenticationSuccessHandler authenticationSuccessHandler;
-//    private final AuditService auditService;
-
-//    @Bean
-//    public CustomAuthenticationEntryPoint authenticationEntryPoint() {
-//        return new CustomAuthenticationEntryPoint(auditService);
-//    }
-//
-//    @Bean
-//    public CustomAccessDeniedHandler accessDeniedHandler() {
-//        return new CustomAccessDeniedHandler(auditService);
-//    }
-*/
-
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
-        auth.userDetailsService(detailsService).passwordEncoder(encoder);
+        auth.userDetailsService(userDetailsService).passwordEncoder(encoder);
     }
 
     @Override
     public void configure(HttpSecurity http) throws Exception {
         http.httpBasic()
-                .and()
-                .exceptionHandling()
                 .authenticationEntryPoint(authenticationEntryPoint)
-                .accessDeniedHandler(accessDeniedHandler)
                 .and()
                 .csrf().disable().headers().frameOptions().disable()
+                .and()
+                .exceptionHandling().accessDeniedHandler(accessDeniedHandler)
                 .and()
                 .authorizeRequests()
                 .antMatchers(HttpMethod.POST, "/actuator/shutdown", "/api/auth/signup").permitAll()
@@ -71,7 +47,6 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/empl/**").hasAnyRole("ACCOUNTANT", "USER")
                 .antMatchers("/api/security/**").hasRole("AUDITOR")
                 .antMatchers("/api/acct/**").hasRole("ACCOUNTANT")
-                .anyRequest().authenticated()
                 .and()
                 .sessionManagement()
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS);

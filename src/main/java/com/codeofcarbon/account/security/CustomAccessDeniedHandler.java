@@ -20,14 +20,9 @@ public class CustomAccessDeniedHandler implements AccessDeniedHandler {
     public void handle(HttpServletRequest request,
                        HttpServletResponse response,
                        AccessDeniedException accessDeniedException) throws IOException {
-
         var requestPath = request.getServletPath();
         var deniedUser = request.getUserPrincipal().getName();
-        requestPath = requestPath.endsWith("/") ?
-                requestPath.substring(0, requestPath.length() - 1) : requestPath;
-
         auditService.logEvent(Action.ACCESS_DENIED, deniedUser, requestPath, requestPath);
-
         response.sendError(HttpServletResponse.SC_FORBIDDEN, "Access Denied!");
     }
 }
