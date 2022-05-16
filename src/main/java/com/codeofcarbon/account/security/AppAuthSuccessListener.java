@@ -8,7 +8,7 @@ import org.springframework.security.authentication.event.AuthenticationSuccessEv
 
 @Configuration
 @RequiredArgsConstructor
-public class CustomAuthSuccessListener implements ApplicationListener<AuthenticationSuccessEvent> {
+public class AppAuthSuccessListener implements ApplicationListener<AuthenticationSuccessEvent> {
     private final UserRepository userRepository;
 
     @Override

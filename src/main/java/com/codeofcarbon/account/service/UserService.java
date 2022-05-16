@@ -4,7 +4,7 @@ import com.codeofcarbon.account.model.Action;
 import com.codeofcarbon.account.model.Role;
 import com.codeofcarbon.account.model.User;
 import com.codeofcarbon.account.repository.UserRepository;
-import com.codeofcarbon.account.security.MyPasswordEncoder;
+import com.codeofcarbon.account.security.AppPasswordEncoder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,7 +23,7 @@ public class UserService implements UserDetailsService {
     public static final int MAX_FAILED_ATTEMPTS = 4;
     private final AuditService auditService;
     private final UserRepository userRepository;
-    private final MyPasswordEncoder encoder;
+    private final AppPasswordEncoder encoder;
     private final List<String> breachedPasswords =
             List.of("PasswordForJanuary", "PasswordForFebruary", "PasswordForMarch", "PasswordForApril",
                     "PasswordForMay", "PasswordForJune", "PasswordForJuly", "PasswordForAugust",
