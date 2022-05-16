@@ -3,7 +3,7 @@ package com.codeofcarbon.account.controller;
 import com.codeofcarbon.account.model.User;
 import com.codeofcarbon.account.service.PaymentService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -12,29 +12,24 @@ import java.util.*;
 
 @RestController
 @RequestMapping("api")
+@ResponseStatus(HttpStatus.OK)
 @RequiredArgsConstructor
 public class PaymentController {
     private final PaymentService paymentService;
 
-    // gives access to the employee payrolls
     @GetMapping("/empl/payment")
-    public ResponseEntity<Object> showPayments(@RequestParam(value = "period", required = false) String period,
-                                               @AuthenticationPrincipal UserDetails details) {
-        var response = paymentService.getEmployeePayments((User) details, period);
-        return period == null ? ResponseEntity.ok(response) : ResponseEntity.ok(response.get(0));
+    public Object showPayments(@AuthenticationPrincipal UserDetails details,
+                               @RequestParam(required = false) String period) {
+        return paymentService.getEmployeePayments((User) details, period);
     }
 
-    // changes the salary of a specific user
     @PostMapping("/acct/payments")
-    public ResponseEntity<Object> uploadPayrolls(@RequestBody List<Map<String, String>> payrollsData) {
-        paymentService.addPayrolls(payrollsData);
-        return ResponseEntity.ok(Map.of("status", "Added successfully!"));
+    public Map<String, String> uploadPayrolls(@RequestBody List<Map<String, String>> payrollsData) {
+        return paymentService.addPayrolls(payrollsData);
     }
 
-    // uploads employee payrolls
     @PutMapping("/acct/payments")
-    public ResponseEntity<Object> changeEmployeeSalary(@RequestBody Map<String, String> payroll) {
-        paymentService.updateEmployeeSalary(payroll);
-        return ResponseEntity.ok(Map.of("status", "Updated successfully!"));
+    public Map<String, String> changeEmployeeSalary(@RequestBody Map<String, String> payroll) {
+        return paymentService.updateEmployeeSalary(payroll);
     }
 }

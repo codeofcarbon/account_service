@@ -3,6 +3,7 @@ package com.codeofcarbon.account.service;
 import com.codeofcarbon.account.model.*;
 import com.codeofcarbon.account.model.dto.PaymentDTO;
 import com.codeofcarbon.account.repository.PaymentRepository;
+import com.codeofcarbon.account.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,53 +20,62 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class PaymentService {
     private final PaymentRepository paymentRepository;
-    private final UserService userService;
+    private final UserRepository userRepository;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM-yyyy");
 
-    public List<PaymentDTO> getEmployeePayments(User user, String period) {
-        var paymentsStream = paymentRepository.findAllByUserEmailOrderByPeriodDesc(user.getEmail()).stream();
-        if (period == null)
-            return paymentsStream.map(payment -> PaymentDTO.mapToPaymentDTO(payment, user)).collect(Collectors.toList());
-
-        if (!period.matches("(0[1-9]|1[0-2])-\\d{4}"))
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
-
-        var yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy")).atDay(1);
-        var periodPayment = paymentsStream.filter(payment -> payment.getPeriod().equals(yearMonth)).findAny();
-        if (periodPayment.isPresent())
-            return List.of(PaymentDTO.mapToPaymentDTO(periodPayment.get(), user));
-        else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "No payments in that period");
-    }
-
-    public void addPayrolls(List<Map<String, String>> payrollsData) {
+    public Map<String, String> addPayrolls(List<Map<String, String>> payrollsData) {
         payrollsData.stream()
                 .map(payroll -> prepareValidPayment(payroll, new Payment(), false))
                 .forEach(paymentRepository::save);
+        return Map.of("status", "Added successfully!");
     }
 
-    public void updateEmployeeSalary(Map<String, String> paymentToUpdate) {
-        var validPayment = prepareValidPayment(paymentToUpdate, new Payment(), true);
-        paymentRepository.save(validPayment);
+    public Map<String, String> updateEmployeeSalary(Map<String, String> payrollToUpdate) {
+        var validPayment = prepareValidPayment(payrollToUpdate, new Payment(), true);
+        var payment = paymentRepository.findPaymentByEmployeeIgnoreCaseAndPeriod(
+                validPayment.getUser().getEmail(), validPayment.getPeriod())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No payments in that period"));
+
+        payment.setSalary(validPayment.getSalary());
+        paymentRepository.save(payment);
+        return Map.of("status", "Updated successfully!");
     }
 
-    private Payment prepareValidPayment(Map<String, String> payroll, Payment validPayment, boolean updating) {
-        if (userService.loadUserByUsername(payroll.get("employee")) != null)
-            validPayment.setUser((User) userService.loadUserByUsername(payroll.get("employee")));
+    public Object getEmployeePayments(User user, String period) {
+        if (period != null) {
+            if (!period.matches("(0[1-9]|1[0-2])-\\d{4}"))
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
-        if (payroll.get("period").matches("(0[1-9]|1[0-2])-\\d{4}"))
-            validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")).atDay(1));
-        else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
+            var payment = paymentRepository.findPaymentByEmployeeIgnoreCaseAndPeriod(
+                            user.getEmail(), YearMonth.parse(period, formatter).atDay(1))
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No payments in that period"));
+            return PaymentDTO.mapToPaymentDTO(payment, user);
+        }
+        return paymentRepository.findAllByUserEmailOrderByPeriodDesc(user.getEmail()).stream()
+                .map(payment -> PaymentDTO.mapToPaymentDTO(payment, user))
+                .collect(Collectors.toList());
+    }
 
-        if (payroll.get("salary").charAt(0) != '-')
-            validPayment.setSalary(Long.parseLong(payroll.get("salary")));
-        else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Salary must be non negative!");
+    public Payment prepareValidPayment(Map<String, String> payroll, Payment validPayment, boolean isUpdating) {
+       if (!payroll.get("period").matches("(0[1-9]|1[0-2])-\\d{4}"))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
-        paymentRepository.findAll().stream()
-                .filter(payment -> payment.getUser().getEmail().equals(validPayment.getUser().getEmail())
-                                   && payment.getPeriod().equals(validPayment.getPeriod()))
-                .findAny().ifPresent(payment -> {
-                    if (updating) payment.setSalary(Long.parseLong(payroll.get("salary")));
-                    else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Periods can not duplicate!");
-                });
+       if (payroll.get("salary").charAt(0) == '-')
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Salary must be non negative!");
+
+        var employee = userRepository.findByEmailIgnoreCase(payroll.get("employee"))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+
+        validPayment.setUser(employee);
+        validPayment.setPeriod(YearMonth.parse(payroll.get("period"), formatter).atDay(1));
+        validPayment.setSalary(Long.parseLong(payroll.get("salary")));
+
+        if (!isUpdating &&
+            paymentRepository.existsByUserAndPeriod(employee, YearMonth.parse(payroll.get("period"), formatter).atDay(1)))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Periods can not duplicate!");
+
         return validPayment;
     }
+
+
 }
