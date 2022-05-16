@@ -3,6 +3,7 @@ package com.codeofcarbon.account.service;
 import com.codeofcarbon.account.model.Action;
 import com.codeofcarbon.account.model.Role;
 import com.codeofcarbon.account.model.User;
+import com.codeofcarbon.account.model.dto.UserDTO;
 import com.codeofcarbon.account.repository.UserRepository;
 import com.codeofcarbon.account.security.AppPasswordEncoder;
 import lombok.RequiredArgsConstructor;
@@ -14,13 +15,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 @Transactional
 @RequiredArgsConstructor
 public class UserService implements UserDetailsService {
-    public static String foundEmail;
-    public static final int MAX_FAILED_ATTEMPTS = 4;
+    public static final int MAX_FAILED_ATTEMPTS = 5;
     private final AuditService auditService;
     private final UserRepository userRepository;
     private final AppPasswordEncoder encoder;
@@ -31,56 +32,58 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) {
-        foundEmail = email.toLowerCase();
-        return userRepository.findByEmail(email.toLowerCase())
+        return userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
     }
 
-    public User addNewUser(User user, String requestPath) {
-        userRepository.findByEmail(user.getEmail().toLowerCase())
-                .ifPresent(userToAdd -> {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User exist!");
-                });
+    public UserDTO addNewUser(User newUser, String path) {
+        if (userRepository.existsUserByEmailIgnoreCase(newUser.getEmail()))
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User exist!");
 
-        var validPassword = checkPasswordRequirements(user.getPassword(), "");
-        user.setPassword(encoder.encode(validPassword));
-        user.setEmail(user.getEmail().toLowerCase());
-        user.grantAuthority(userRepository.findAll().isEmpty() ? Role.ROLE_ADMINISTRATOR : Role.ROLE_USER);
+        var validPassword = validatePassword(newUser.getPassword(), "");
 
-        auditService.logEvent(Action.CREATE_USER, null, user.getEmail(), requestPath);
+        newUser.setPassword(validPassword);
+        newUser.setEmail(newUser.getEmail().toLowerCase());
+        newUser.grantAuthority(userRepository.findAll().isEmpty() ? Role.ROLE_ADMINISTRATOR : Role.ROLE_USER);
 
-        return userRepository.save(user);
+        userRepository.save(newUser);
+        auditService.logEvent(Action.CREATE_USER, "Anonymous", newUser.getEmail(), path);
+        return UserDTO.mapToUserDTO(newUser);
     }
 
-    public void updatePassword(String newPassword, String userEmail, String requestPath) {
-        var user = userRepository.findUserByEmailIgnoreCase(userEmail);
-        var validPassword = checkPasswordRequirements(newPassword, user.getPassword());
-        user.setPassword(encoder.encode(validPassword));
+    public Map<String, String> updatePassword(Map<String, String> request, String userEmail, String path) {
+        var user = userRepository.findByEmailIgnoreCase(userEmail)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+        var validPassword = validatePassword(request.get("new_password"), user.getPassword());
 
-        auditService.logEvent(Action.CHANGE_PASSWORD, user.getEmail(), user.getEmail(), requestPath);
+        user.setPassword(validPassword);
 
+        userRepository.save(user);
+        auditService.logEvent(Action.CHANGE_PASSWORD, userEmail, userEmail, path);
+        return Map.of("email", userEmail, "status", "The password has been updated successfully");
+    }
+
+    public void increaseFailedAttempts(User user, String path) {
+        user.setFailedAttempt(user.getFailedAttempt() + 1);
+        if (user.getFailedAttempt() >= MAX_FAILED_ATTEMPTS) {
+            lockUser(user, path);
+        }
         userRepository.save(user);
     }
 
-    private String checkPasswordRequirements(String newPassword, String currentPassword) {
+    private void lockUser(User user, String path) {
+        user.setAccountNonLocked(false);
+        auditService.logEvent(Action.BRUTE_FORCE, user.getEmail(), path, path);
+        auditService.logEvent(Action.LOCK_USER, user.getEmail(), "Lock user " + user.getEmail(), path);
+    }
+
+    public String validatePassword(String newPassword, String currentPassword) {
         if (newPassword.length() < 12)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password length must be at least 12 chars!");
         if (breachedPasswords.contains(newPassword))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The password is in the hacker's database!");
         if (encoder.matches(newPassword, currentPassword))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The passwords must be different!");
-        return newPassword;
-    }
-
-    public void increaseFailedAttempts(User user, String path) {
-        user.setFailedAttempt(user.getFailedAttempt() + 1);
-        if (user.getFailedAttempt() > MAX_FAILED_ATTEMPTS) lockUser(user, path);
-        userRepository.save(user);
-    }
-
-    public void lockUser(User user, String path) {
-        user.setAccountNonLocked(false);
-        auditService.logEvent(Action.BRUTE_FORCE, user.getEmail(), path, path);
-        auditService.logEvent(Action.LOCK_USER, user.getEmail(), String.format("Lock user %s", user.getEmail()), path);
+        return encoder.encode(newPassword);
     }
 }

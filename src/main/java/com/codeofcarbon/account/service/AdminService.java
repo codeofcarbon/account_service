@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AdminService {
     private final AuditService auditService;
-    private final UserService userService;
     private final UserRepository userRepository;
     public enum Operation {
         GRANT, REMOVE, LOCK, UNLOCK
@@ -31,7 +30,7 @@ public class AdminService {
     }
 
     public void removeUser(String userEmail, String requestPath, String adminEmail) {
-        var user = userRepository.findByEmail(userEmail.toLowerCase())
+        var user = userRepository.findByEmailIgnoreCase(userEmail)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
         if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
@@ -40,7 +39,7 @@ public class AdminService {
     }
 
     public Object prepareOperationOnUser(Map<String, String> command, String requestPath, String adminEmail) {
-        var user = userRepository.findByEmail(command.get("user").toLowerCase())
+        var user = userRepository.findByEmailIgnoreCase(command.get("user"))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
         var operation = Arrays.stream(Operation.values())
                 .filter(op -> op.name().equals(command.get("operation")))
