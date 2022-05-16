@@ -29,7 +29,7 @@ public class PaymentService {
         if (!period.matches("(0[1-9]|1[0-2])-\\d{4}"))
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
-        var yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy")).toString();
+        var yearMonth = YearMonth.parse(period, DateTimeFormatter.ofPattern("MM-yyyy")).atDay(1);
         var periodPayment = paymentsStream.filter(payment -> payment.getPeriod().equals(yearMonth)).findAny();
         if (periodPayment.isPresent())
             return List.of(PaymentDTO.mapToPaymentDTO(periodPayment.get(), user));
@@ -52,7 +52,7 @@ public class PaymentService {
             validPayment.setUser((User) userService.loadUserByUsername(payroll.get("employee")));
 
         if (payroll.get("period").matches("(0[1-9]|1[0-2])-\\d{4}"))
-            validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")).toString());
+            validPayment.setPeriod(YearMonth.parse(payroll.get("period"), DateTimeFormatter.ofPattern("MM-yyyy")).atDay(1));
         else throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Input desired period in MM-yyyy format");
 
         if (payroll.get("salary").charAt(0) != '-')

@@ -21,7 +21,7 @@ public class UserDTO {
                 .id(user.getId())
                 .name(user.getName())
                 .lastname(user.getLastname())
-                .email(user.getEmail().toLowerCase())
+                .email(user.getEmail())
                 .roles(user.getRoles().stream().sorted().collect(Collectors.toList()))
                 .build();
     }

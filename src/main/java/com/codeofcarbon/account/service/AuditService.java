@@ -21,19 +21,18 @@ public class AuditService {
     private final EventRepository eventRepository;
 
     public List<EventLogDTO> getSecurityEvents() {
-      return eventRepository.findAll().stream()
+        return eventRepository.findAllEventsOrderById().stream()
                 .map(EventLogDTO::mapToEventDTO)
-                .sorted(Comparator.comparingLong(EventLogDTO::getId))
                 .collect(Collectors.toList());
     }
 
-    public void logEvent(Action action, @Nullable String subject, String object, String path) {
-        var eventLog = new EventLog();
-        eventLog.setDate(LocalDateTime.now());
-        eventLog.setAction(action);
-        eventLog.setSubject(subject);
-        eventLog.setObject(object);
-        eventLog.setPath(path);
-        eventRepository.save(eventLog);
+    public void logEvent(Action action, String subject, String object, String path) {
+        eventRepository.save(EventLog.builder()
+                .date(LocalDateTime.now())
+                .action(action)
+                .subject(subject)
+                .object(object)
+                .path(path)
+                .build());
     }
 }

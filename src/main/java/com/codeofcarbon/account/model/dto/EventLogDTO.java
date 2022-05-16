@@ -23,7 +23,7 @@ public class EventLogDTO {
                 .id(eventLog.getId())
                 .date(DateTimeFormatter.ofPattern("dd-MM-yyyy HH:mm:ss").format(eventLog.getDate()))
                 .action(eventLog.getAction().name())
-                .subject(eventLog.getSubject() == null ? "Anonymous" : eventLog.getSubject())
+                .subject(eventLog.getSubject())
                 .object(eventLog.getObject())
                 .path(eventLog.getPath())
                 .build();
