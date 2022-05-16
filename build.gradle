@@ -1,10 +1,6 @@
 buildscript {
     apply plugin: 'hyperskill'
-
-    repositories {
-        mavenCentral()
-    }
-
+    repositories { mavenCentral() }
     dependencies {
         classpath "org.springframework.boot:spring-boot-gradle-plugin:$hs.spring.bootVersion"
         classpath "io.spring.gradle:dependency-management-plugin:$hs.spring.dependencyManagementVersion"
@@ -19,40 +15,15 @@ apply plugin: 'java'
 apply plugin: 'org.springframework.boot'
 apply plugin: 'io.spring.dependency-management'
 
-repositories {
-    mavenCentral()
-}
-
 def hsJava = Integer.parseInt(hs.java.version)
 def userJava = Integer.parseInt(JavaVersion.current().majorVersion)
 def testJava = Math.max(userJava, hsJava)
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(testJava)
-
-compileJava {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(userJava)
-    }
-}
-
-compileTestJava {
-    javaCompiler = javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(testJava)
-    }
-}
-
-repositories {
-    mavenCentral()
-    maven { url "https://jitpack.io" }
-}
-
-dependencies {
-    testImplementation 'com.github.hyperskill:hs-test:release-SNAPSHOT'
-}
-
-configurations.all {
-    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
-}
+compileJava.options.encoding = 'utf-8'
+compileJava { javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(userJava) } }
+compileTestJava { javaToolchains.compilerFor { languageVersion = JavaLanguageVersion.of(testJava) } }
+sourceSets.main.resources.srcDirs = ["src/main/resources"]
 
 sourceSets {
     main.java.srcDir 'main'
@@ -64,9 +35,10 @@ test {
     outputs.upToDateWhen { false }
 }
 
-compileJava.options.encoding = 'utf-8'
-
-sourceSets.main.resources.srcDirs = ["src/main/resources"]
+repositories {
+    mavenCentral()
+    maven { url "https://jitpack.io" }
+}
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter'
@@ -80,9 +52,5 @@ dependencies {
     implementation 'org.projectlombok:lombok'
     implementation 'com.h2database:h2'
     annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'com.github.hyperskill:hs-test:release-SNAPSHOT'
 }
-
-
-//tasks.withType(JavaCompile) {
-//    options.encoding = 'utf-8'
-//}

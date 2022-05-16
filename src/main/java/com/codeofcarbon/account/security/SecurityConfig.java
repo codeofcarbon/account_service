@@ -10,7 +10,7 @@ import org.springframework.security.config.annotation.web.configuration.*;
 import org.springframework.security.config.http.SessionCreationPolicy;
 
 @Configuration
-@EnableWebSecurity(debug = true)
+@EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
     private final AppAuthenticationEntryPoint authenticationEntryPoint;
@@ -36,7 +36,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/actuator/shutdown", "/api/auth/signup").permitAll()
                 .antMatchers("/api/auth/changepass").authenticated()
                 .antMatchers("/api/admin/**").hasRole("ADMINISTRATOR")
-                .antMatchers("/api/empl/**").hasAnyRole("ACCOUNTANT", "USER")       //, "ADMINISTRATOR")
+                .antMatchers("/api/empl/**").hasAnyRole("ACCOUNTANT", "USER")
                 .antMatchers("/api/security/**").hasRole("AUDITOR")
                 .antMatchers("/api/acct/**").hasRole("ACCOUNTANT")
                 .and()
