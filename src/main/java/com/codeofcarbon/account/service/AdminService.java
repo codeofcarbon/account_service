@@ -4,10 +4,8 @@ import com.codeofcarbon.account.model.*;
 import com.codeofcarbon.account.model.dto.UserDTO;
 import com.codeofcarbon.account.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -62,36 +60,5 @@ public class AdminService {
         userRepository.save(user);
         auditService.logEvent(action, adminEmail, String.format(logMessage, requestedRole, user.getEmail()), path);
         return UserDTO.mapToUserDTO(user);
-    }
-
-    public Role validateRole(User user, Role role, AdminService.Operation operation) {
-        Arrays.stream(Role.values())
-                .filter(r -> r.name().equals(role.name()))
-                .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found!"));
-        switch (operation) {
-            case GRANT:
-                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                            "The user cannot combine administrative and business roles!");
-                break;
-            case REMOVE:
-                if (role == Role.ROLE_ADMINISTRATOR)
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
-                if (!user.getRoles().contains(role))
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user does not have a role!");
-                if (user.getRoles().size() == 1)
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user must have at least one role!");
-                break;
-            case DELETE:
-                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR)) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR!");
-                }
-                break;
-            case LOCK:
-            case UNLOCK:
-                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't lock the ADMINISTRATOR!");
-        }
-        return role;
     }
 }
