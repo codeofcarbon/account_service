@@ -5,7 +5,6 @@ import com.codeofcarbon.account.model.dto.UserDTO;
 import com.codeofcarbon.account.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -19,8 +18,9 @@ import java.util.stream.Collectors;
 public class AdminService {
     private final AuditService auditService;
     private final UserRepository userRepository;
+
     public enum Operation {
-        GRANT, REMOVE, LOCK, UNLOCK
+        GRANT, REMOVE, LOCK, UNLOCK, DELETE
     }
 
     public List<UserDTO> getAllUsersData() {
@@ -29,74 +29,69 @@ public class AdminService {
                 .collect(Collectors.toList());
     }
 
-    public void removeUser(String userEmail, String requestPath, String adminEmail) {
-        var user = userRepository.findByEmailIgnoreCase(userEmail)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
-        if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
-        auditService.logEvent(Action.DELETE_USER, adminEmail, userEmail, requestPath);
+    public Map<String, String> removeUser(User user, String path,
+                                          String adminEmail) {
         userRepository.delete(user);
+        auditService.logEvent(Action.DELETE_USER, adminEmail, user.getEmail(), path);
+        return Map.of("user", user.getEmail(), "status", "Deleted successfully!");
     }
 
-    public Object prepareOperationOnUser(Map<String, String> command, String requestPath, String adminEmail) {
-        var user = userRepository.findByEmailIgnoreCase(command.get("user"))
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
-        var operation = Arrays.stream(Operation.values())
-                .filter(op -> op.name().equals(command.get("operation")))
-                .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Operation aborted"));
+    public Map<String, String> lockOrUnlock(User user, Operation operation,
+                                            String path, String adminEmail) {
+        var logMessage = (Operation.LOCK == operation ? "Lock user " : "Unlock user ") + user.getEmail();
+        var responseInfo = "User " + user.getEmail() + (Operation.LOCK == operation ? " locked!" : " unlocked!");
+        var action = Operation.LOCK == operation ? Action.LOCK_USER : Action.UNLOCK_USER;
 
-        if (Operation.LOCK == operation || Operation.UNLOCK == operation) {
-            var updatedUser = performTheOperation(operation, user, null, requestPath, adminEmail);
-            return Map.of("status", String.format("User %s %s!", updatedUser.getEmail(),
-                    Operation.LOCK == operation ? "locked" : "unlocked"));
-        } else {
-            var role = Arrays.stream(Role.values())
-                    .filter(r -> r.name().contains(command.get("role")))
-                    .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found!"));
-            return performTheOperation(operation, user, role, requestPath, adminEmail);
-        }
+        if (Operation.UNLOCK == operation) user.setFailedAttempt(0);
+        user.setAccountNonLocked(Operation.UNLOCK == operation);
+
+        userRepository.save(user);
+        auditService.logEvent(action, adminEmail, logMessage, path);
+        return Map.of("status", responseInfo);
     }
 
-    private User performTheOperation(Operation operation, User user, @Nullable Role role,
-                                     String requestPath, String adminEmail) {
+    public UserDTO grantOrRevoke(User user, Operation operation,
+                                 Role role, String path, String adminEmail) {
+        var logMessage = Operation.GRANT == operation ? "Grant role %s to %s" : "Remove role %s from %s";
+        var action = Operation.GRANT == operation ? Action.GRANT_ROLE : Action.REMOVE_ROLE;
+        var requestedRole = role.name().split("_")[1];
+
+        if (Operation.GRANT == operation) user.grantAuthority(role);
+        if (Operation.REMOVE == operation) user.getRoles().remove(role);
+
+        userRepository.save(user);
+        auditService.logEvent(action, adminEmail, String.format(logMessage, requestedRole, user.getEmail()), path);
+        return UserDTO.mapToUserDTO(user);
+    }
+
+    public Role validateRole(User user, Role role, AdminService.Operation operation) {
+        Arrays.stream(Role.values())
+                .filter(r -> r.name().equals(role.name()))
+                .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found!"));
         switch (operation) {
             case GRANT:
-                assert role != null;
-                if (role == Role.ROLE_ADMINISTRATOR || user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
+                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "The user cannot combine administrative and business roles!");
-
-                user.grantAuthority(role);
-                var message = String.format("Grant role %s to %s", role.name().split("_")[1], user.getEmail());
-                auditService.logEvent(Action.GRANT_ROLE, adminEmail, message, requestPath);
                 break;
             case REMOVE:
-                assert role != null;
                 if (role == Role.ROLE_ADMINISTRATOR)
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
                 if (!user.getRoles().contains(role))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user does not have a role!");
                 if (user.getRoles().size() == 1)
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user must have at least one role!");
-
-                user.getRoles().remove(role);
-                message = String.format("Remove role %s from %s", role.name().split("_")[1], user.getEmail());
-                auditService.logEvent(Action.REMOVE_ROLE, adminEmail, message, requestPath);
+                break;
+            case DELETE:
+                if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR)) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR!");
+                }
                 break;
             case LOCK:
+            case UNLOCK:
                 if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't lock the ADMINISTRATOR!");
-
-                user.setAccountNonLocked(false);
-                message = String.format("Lock user %s", user.getEmail());
-                auditService.logEvent(Action.LOCK_USER, user.getEmail(), message, requestPath);
-                break;
-            case UNLOCK:
-                user.setAccountNonLocked(true);
-                user.setFailedAttempt(0);
-                message = String.format("Unlock user %s", user.getEmail());
-                auditService.logEvent(Action.UNLOCK_USER, adminEmail, message, requestPath);
         }
-        return userRepository.save(user);
+        return role;
     }
 }
