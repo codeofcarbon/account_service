@@ -1,8 +1,6 @@
-package com.codeofcarbon.account;
+package java.com.codeofcarbon.account;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.codeofcarbon.account.AccountServiceApplication;
 import com.google.gson.*;
 import org.hyperskill.hstest.dynamic.DynamicTest;
 import org.hyperskill.hstest.dynamic.input.DynamicTesting;
@@ -14,41 +12,13 @@ import org.hyperskill.hstest.testcase.CheckResult;
 import org.springframework.http.HttpStatus;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static org.hyperskill.hstest.common.JsonUtils.*;
 import static org.hyperskill.hstest.testing.expect.Expectation.expect;
 import static org.hyperskill.hstest.testing.expect.json.JsonChecker.*;
 
-class TestRequest {
-    private Map<String, Object> properties = new LinkedHashMap<>();
-
-    public TestRequest() {
-    }
-
-    public TestRequest(TestRequest another) {
-        this.properties = another.properties.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-    }
-
-    public String toJson() {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
-        try {
-            return mapper.writeValueAsString(this.properties);
-        } catch (JsonProcessingException e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
-    }
-
-    public TestRequest setProps(String key, Object value) {
-        properties.put(key, value);
-        return this;
-    }
-}
-
 public class EventLogsTest extends SpringTest {
+
     private final static String signUpApi = "/api/auth/signup";
     private final static String changePassApi = "/api/auth/changepass";
     private final static String getEmployeePaymentApi = "/api/empl/payment";
@@ -300,7 +270,7 @@ public class EventLogsTest extends SpringTest {
     }
 
     /**
-     * Method for checking response on Post request for signup API
+     * method for checking response on Post request for signup API
      *
      * @param body   string representation of body content in JSON format (String)
      * @return instance of CheckResult class containing result of checks (CheckResult)
@@ -352,7 +322,7 @@ public class EventLogsTest extends SpringTest {
     }
 
     /**
-     * Method for restarting application
+     * method for restarting application
      */
     private CheckResult restartApplication() {
         try {
@@ -364,7 +334,7 @@ public class EventLogsTest extends SpringTest {
     }
 
     /**
-     * Method for checking authentication
+     * method for checking authentication
      *
      * @param user    string representation of user information in JSON format (String)
      * @param status  required http status for response (int)
@@ -601,7 +571,7 @@ public class EventLogsTest extends SpringTest {
 
 
     /**
-     * Method for testing api response
+     * method for testing api response
      *
      * @param user    string representation of user information in JSON format (String)
      * @param body    request body (String)
@@ -612,7 +582,8 @@ public class EventLogsTest extends SpringTest {
      * @return response (HttpResponse)
      */
     private HttpResponse checkResponseStatus(String user, String body,
-                                             int status, String api, String method, String message) {
+                                             int status, String api,
+                                             String method, String message) {
         HttpRequest request = switch (method) {
             case "GET" -> get(api);
             case "POST" -> post(api, body);
@@ -633,8 +604,8 @@ public class EventLogsTest extends SpringTest {
         HttpResponse response = request.send();
 
         if (response.getStatusCode() != status) {
-            throw new WrongAnswer(method + " " + api + " should respond with "
-                                  + "status code " + status + ", responded: " + response.getStatusCode() + "\n"
+            throw new WrongAnswer(method + " " + api + " should respond with status code " + status +
+                                  ", responded: " + response.getStatusCode() + "\n"
                                   + message + "\n"
                                   + "Response body:\n" + response.getContent() + "\n");
         }
@@ -789,9 +760,7 @@ public class EventLogsTest extends SpringTest {
             () -> testLocking(maxMusCorrectUser, "User must be locked through admin endpoint"),                 // 73
             () -> testPutAccessApi(HttpStatus.BAD_REQUEST, jDNewPass,
                     jDCorrectUser, "LOCK", "Can't lock the ADMINISTRATOR!", ""),                                // 74
-            () -> testGetAdminApi(200, jDNewPass, firstResponseAdminApi,
-                    "Api must be available to admin user"),                                                     // 75
-
+            () -> testGetAdminApi(200, jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),// 75
             () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 76
             () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 77
             () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 78
