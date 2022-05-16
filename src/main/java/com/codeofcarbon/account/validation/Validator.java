@@ -46,28 +46,28 @@ public class Validator {
                 .filter(r -> r.name().equals(role.name()))
                 .findFirst().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Role not found!"));
         switch (operation) {
-            case GRANT:
+            case GRANT -> {
                 if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                             "The user cannot combine administrative and business roles!");
-                break;
-            case REMOVE:
+            }
+            case REMOVE -> {
                 if (role == Role.ROLE_ADMINISTRATOR)
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR role!");
                 if (!user.getRoles().contains(role))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user does not have a role!");
                 if (user.getRoles().size() == 1)
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "The user must have at least one role!");
-                break;
-            case DELETE:
+            }
+            case DELETE -> {
                 if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR)) {
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't remove ADMINISTRATOR!");
                 }
-                break;
-            case LOCK:
-            case UNLOCK:
+            }
+            case LOCK, UNLOCK -> {
                 if (user.getRoles().contains(Role.ROLE_ADMINISTRATOR))
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Can't lock the ADMINISTRATOR!");
+            }
         }
         return role;
     }

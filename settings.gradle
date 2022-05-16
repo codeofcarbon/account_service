@@ -1,2 +1,15 @@
 rootProject.name = 'account service'
 
+buildscript {
+    repositories {
+        maven { url 'https://jitpack.io' }
+    }
+
+    dependencies {
+        classpath "com.github.hyperskill:hs-gradle-plugin:release-SNAPSHOT"
+    }
+
+    configurations.all {
+        resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+    }
+}
