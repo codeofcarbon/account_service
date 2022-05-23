@@ -1,5 +1,5 @@
 # Account Service
- A project aimed at familiarizing oneself with the Spring Security module, the basics of user authentication and authorization, logging security-related events and learning about various requirements of modern information security standards for web applications.
+A REST API simulating sending payrolls to the employee's account on the corporate website with a defined role model, business logic implemented and ensured the security of the service.
 
 ## Table of contents
 * [Overview](#overview)
@@ -8,8 +8,12 @@
 * [How to start](#how-to-start)
 
 ## Overview
+A project aimed at familiarizing oneself with the Spring Security module, the basics of user authentication and authorization, logging security-related events and learning about various requirements of modern information security standards for web applications.
 
 ## Screenshots
+- Some screenshots of various test cases:
+
+``loading...``
 
 ## Technologies
 - Java 17
@@ -18,7 +22,7 @@
 - Gradle 7.2
 - H2 Database 1.4
 - JUnit 5.7.2
-- Hyperskill testing library
+- Hyperskill Testing Library 8.2
 - Lombok 1.20
 
 ## How to start

@@ -327,39 +327,6 @@ public class BusinessLogicTest extends SpringTest {
         return CheckResult.correct();
     }
 
-//    /**
-//     * method for check the prohibition of requests specified types
-//     *
-//     * @param api           testing api (String)
-//     * @param deniedMethods list of prohibited type requests
-//     * @param body          string representation of body content in JSON format (String)
-//     * @return instance of CheckResult class containing result of checks (CheckResult)
-//     */
-//    private CheckResult testDeniedMethods(String api, List<String> deniedMethods, String body) {
-//        HttpRequest getReq = get(api);
-//        HttpRequest postReq = post(api, body);
-//        HttpRequest putReq = put(api, body);
-//        HttpRequest deleteReq = delete(api);
-//
-//        Map<String, HttpRequest> methodsMap = new LinkedHashMap<>() {{
-//            put("get", getReq);
-//            put("post", postReq);
-//            put("put", putReq);
-//            put("delete", deleteReq);
-//        }};
-//
-//        for (Map.Entry<String, HttpRequest> entry : methodsMap.entrySet()) {
-//            if (deniedMethods.contains(entry.getKey())) {
-//                HttpResponse response = entry.getValue().send();
-//                if (response.getStatusCode() != HttpStatus.METHOD_NOT_ALLOWED.value()) {
-//                    return CheckResult.wrong("Method " + entry.getKey().toUpperCase() + " is not allowed for " + api +
-//                                             " status code should be 405, responded: " + response.getStatusCode());
-//                }
-//            }
-//        }
-//        return CheckResult.correct();
-//    }
-
     /**
      * method for restarting application
      */
@@ -702,19 +669,31 @@ public class BusinessLogicTest extends SpringTest {
             default -> null;
         };
 
+        System.out.println("endpoint ----->>> " + api);
+
         if (user != null) {
             JsonObject userJson = getJson(user).getAsJsonObject();
+
+            System.out.println("""
+                        ------------------------------------------------
+                        ------------------------------------- user -----
+                        ------------------------------------------------""");
+            System.out.println(getPrettyJson(userJson));
+
             String password = userJson.get("password").getAsString();
             String login = userJson.get("email").getAsString().toLowerCase();
             if (request != null) {
-                request = request.basicAuth(login, password);
-                System.out.println("""
+
+                            System.out.println("""
                         ------------------------------------------------
-                        --------------------------------- request ------
+                        ----------------------------- request body -----
                         ------------------------------------------------""");
-                System.out.println(getPrettyJson(getJson(request.getContent())));
+            System.out.println(getPrettyJson(getJson(request.getContent())));
+
+                request = request.basicAuth(login, password);
             }
         }
+
         assert request != null;
         HttpResponse response = request.send();
 
@@ -730,6 +709,7 @@ public class BusinessLogicTest extends SpringTest {
                 --------------------------------- response -----
                 ------------------------------------------------""");
         System.out.println(response.getContent());
+
         return response;
     }
 

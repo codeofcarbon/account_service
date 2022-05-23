@@ -11,9 +11,6 @@ import org.hyperskill.hstest.stage.SpringTest;
 import org.hyperskill.hstest.testcase.CheckResult;
 import org.springframework.http.HttpStatus;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.*;
 
 import static org.hyperskill.hstest.common.JsonUtils.*;
@@ -628,19 +625,31 @@ public class LoggingSecurityEventsTest extends SpringTest {
             default -> null;
         };
 
+        System.out.println("endpoint ----->>> " + api);
+
         if (user != null) {
             JsonObject userJson = getJson(user).getAsJsonObject();
+
+            System.out.println("""
+                        ------------------------------------------------
+                        ------------------------------------- user -----
+                        ------------------------------------------------""");
+            System.out.println(getPrettyJson(userJson));
+
             String password = userJson.get("password").getAsString();
             String login = userJson.get("email").getAsString().toLowerCase();
             if (request != null) {
-                request = request.basicAuth(login, password);
+
                 System.out.println("""
                         ------------------------------------------------
-                        --------------------------------- request ------
+                        ----------------------------- request body -----
                         ------------------------------------------------""");
                 System.out.println(getPrettyJson(getJson(request.getContent())));
+
+                request = request.basicAuth(login, password);
             }
         }
+
         assert request != null;
         HttpResponse response = request.send();
 
@@ -650,11 +659,13 @@ public class LoggingSecurityEventsTest extends SpringTest {
                                   + message + "\n"
                                   + "Response body:\n" + response.getContent() + "\n");
         }
+
         System.out.println("""
                 ------------------------------------------------
                 --------------------------------- response -----
                 ------------------------------------------------""");
         System.out.println(response.getContent());
+
         return response;
     }
 
