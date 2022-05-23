@@ -3,7 +3,6 @@ package com.codeofcarbon.accountservicetests;
 import com.codeofcarbon.accountservice.AccountServiceApplication;
 import com.google.gson.*;
 import org.hyperskill.hstest.dynamic.DynamicTest;
-import org.hyperskill.hstest.dynamic.SystemHandler;
 import org.hyperskill.hstest.dynamic.input.DynamicTesting;
 import org.hyperskill.hstest.exception.outcomes.*;
 import org.hyperskill.hstest.mocks.web.request.HttpRequest;
@@ -12,11 +11,6 @@ import org.hyperskill.hstest.stage.SpringTest;
 import org.hyperskill.hstest.testcase.CheckResult;
 import org.springframework.http.HttpStatus;
 
-import java.io.IOException;
-import java.nio.file.DirectoryNotEmptyException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
-import java.nio.file.Path;
 import java.util.*;
 
 import static org.hyperskill.hstest.common.JsonUtils.*;
@@ -272,7 +266,6 @@ public class BusinessLogicTest extends SpringTest {
     }
 
     private CheckResult testApi(String user, String body, int status, String api, String method, String message) {
-
         checkResponseStatus(user, body, status, api, method, message);
 
         return CheckResult.correct();
@@ -334,38 +327,38 @@ public class BusinessLogicTest extends SpringTest {
         return CheckResult.correct();
     }
 
-    /**
-     * method for check the prohibition of requests specified types
-     *
-     * @param api           testing api (String)
-     * @param deniedMethods list of prohibited type requests
-     * @param body          string representation of body content in JSON format (String)
-     * @return instance of CheckResult class containing result of checks (CheckResult)
-     */
-    private CheckResult testDeniedMethods(String api, List<String> deniedMethods, String body) {
-        HttpRequest getReq = get(api);
-        HttpRequest postReq = post(api, body);
-        HttpRequest putReq = put(api, body);
-        HttpRequest deleteReq = delete(api);
-
-        Map<String, HttpRequest> methodsMap = new LinkedHashMap<>() {{
-            put("get", getReq);
-            put("post", postReq);
-            put("put", putReq);
-            put("delete", deleteReq);
-        }};
-
-        for (Map.Entry<String, HttpRequest> entry : methodsMap.entrySet()) {
-            if (deniedMethods.contains(entry.getKey())) {
-                HttpResponse response = entry.getValue().send();
-                if (response.getStatusCode() != HttpStatus.METHOD_NOT_ALLOWED.value()) {
-                    return CheckResult.wrong("Method " + entry.getKey().toUpperCase() + " is not allowed for " + api +
-                                             " status code should be 405, responded: " + response.getStatusCode());
-                }
-            }
-        }
-        return CheckResult.correct();
-    }
+//    /**
+//     * method for check the prohibition of requests specified types
+//     *
+//     * @param api           testing api (String)
+//     * @param deniedMethods list of prohibited type requests
+//     * @param body          string representation of body content in JSON format (String)
+//     * @return instance of CheckResult class containing result of checks (CheckResult)
+//     */
+//    private CheckResult testDeniedMethods(String api, List<String> deniedMethods, String body) {
+//        HttpRequest getReq = get(api);
+//        HttpRequest postReq = post(api, body);
+//        HttpRequest putReq = put(api, body);
+//        HttpRequest deleteReq = delete(api);
+//
+//        Map<String, HttpRequest> methodsMap = new LinkedHashMap<>() {{
+//            put("get", getReq);
+//            put("post", postReq);
+//            put("put", putReq);
+//            put("delete", deleteReq);
+//        }};
+//
+//        for (Map.Entry<String, HttpRequest> entry : methodsMap.entrySet()) {
+//            if (deniedMethods.contains(entry.getKey())) {
+//                HttpResponse response = entry.getValue().send();
+//                if (response.getStatusCode() != HttpStatus.METHOD_NOT_ALLOWED.value()) {
+//                    return CheckResult.wrong("Method " + entry.getKey().toUpperCase() + " is not allowed for " + api +
+//                                             " status code should be 405, responded: " + response.getStatusCode());
+//                }
+//            }
+//        }
+//        return CheckResult.correct();
+//    }
 
     /**
      * method for restarting application
@@ -429,7 +422,10 @@ public class BusinessLogicTest extends SpringTest {
     }
 
     private CheckResult testBreachedPass(String api, String login, String password, String body) {
-
+        System.out.println("""
+                        ----------------------------------------------------------------------------------------
+                        --------------------------------- checking passwords from dummy hackers database ------
+                        ----------------------------------------------------------------------------------------""");
         JsonObject json = getJson(body).getAsJsonObject();
         HttpResponse response;
 
@@ -540,7 +536,7 @@ public class BusinessLogicTest extends SpringTest {
     }
 
     private CheckResult testGetPaymentResponseParam(String user, int status, String request,
-                                            String correctResponse, String message) {
+                                                    String correctResponse, String message) {
         JsonObject userJson = getJson(user).getAsJsonObject();
         String password = userJson.get("password").getAsString();
         String login = userJson.get("email").getAsString().toLowerCase();
@@ -633,7 +629,7 @@ public class BusinessLogicTest extends SpringTest {
     }
 
     private CheckResult testPutAdminApi(HttpStatus status, String user, String reqUser,
-                                String role, String operation, String[] respRoles, String message) {
+                                        String role, String operation, String[] respRoles, String message) {
 
         JsonObject jsonUser = getJson(reqUser).getAsJsonObject();
         JsonObject request = new JsonObject();
@@ -712,6 +708,11 @@ public class BusinessLogicTest extends SpringTest {
             String login = userJson.get("email").getAsString().toLowerCase();
             if (request != null) {
                 request = request.basicAuth(login, password);
+                System.out.println("""
+                        ------------------------------------------------
+                        --------------------------------- request ------
+                        ------------------------------------------------""");
+                System.out.println(getPrettyJson(getJson(request.getContent())));
             }
         }
         assert request != null;
@@ -723,161 +724,214 @@ public class BusinessLogicTest extends SpringTest {
                                   + message + "\n"
                                   + "Response body:\n" + response.getContent() + "\n");
         }
+
+        System.out.println("""
+                ------------------------------------------------
+                --------------------------------- response -----
+                ------------------------------------------------""");
+        System.out.println(response.getContent());
         return response;
     }
 
     private CheckResult printTestingFields(String testingField) {
-        System.err.println(testingField);
+        System.out.print(testingField);
         return CheckResult.correct();
     }
 
     @DynamicTest
     DynamicTesting[] dt = new DynamicTesting[]{
-            // =============================================================== testing user registration negative tests
-            () -> printTestingFields("=================================== testing user registration negative tests"),
-            () -> testApi(null, jDEmptyName, 400, signUpApi, "POST", "Empty name field!"),                      // 1
-            () -> testApi(null, jDNoName, 400, signUpApi, "POST", "Name field is absent!"),                     // 2
-            () -> testApi(null, jDEmptyLastName, 400, signUpApi, "POST", "Empty lastname field!"),              // 3
-            () -> testApi(null, jDNoLastName, 400, signUpApi, "POST", "Lastname field is absent!"),             // 4
-            () -> testApi(null, jDEmptyEmail, 400, signUpApi, "POST", "Empty email field!"),                    // 5
-            () -> testApi(null, jDNoEmail, 400, signUpApi, "POST", "Email field is absent!"),                   // 6
-            () -> testApi(null, jDEmptyPassword, 400, signUpApi, "POST", "Empty password field!"),              // 7
-            () -> testApi(null, jDNoPassword, 400, signUpApi, "POST", "Password field is absent!"),             // 8
-            () -> testApi(null, jDWrongEmail1, 400, signUpApi, "POST", "Wrong email!"),                         // 9
-            () -> testApi(null, jDWrongEmail2, 400, signUpApi, "POST", "Wrong email!"),                         // 10
-            () -> testBreachedPass(signUpApi, "", "", jDCorrectUser),                                           // 11
-
-            // =============================================================== testing user registration positive tests
-            () -> printTestingFields("=================================== testing user registration positive tests"),
-            () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 12
-            () -> testPostSignUpResponse(maxMusLower, new String[]{"ROLE_USER"}),                               // 13
-            () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 14
-            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 15
-
-            // =============================================================== testing user registration negative tests
-            () -> printTestingFields("=================================== testing user registration negative tests"),
-            () -> testApi(null, jDCorrectUser, 400, signUpApi, "POST", "User must be unique!"),                 // 16
-            () -> testUserDuplicates(jDCorrectUser),                                                            // 17
-            () -> testApi(null, jDLower, 400, signUpApi, "POST", "User must be unique (ignorecase)!"),          // 18
-
-            // ==================================================================== test authentication, positive tests
-            () -> printTestingFields("=================================== test authentication, positive tests"),
-            () -> testUserRegistration(maxMusLower, 200, "User must login!"),                                   // 19
-            () -> testUserRegistration(maxMusCorrectUser, 200, "Login case insensitive!"),                      // 20
-
-            // ==================================================================== test authentication, negative tests
-            () -> printTestingFields("=================================== test authentication, negative tests"),
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 21
-            () -> testUserRegistration(maxMusWrongEmail, 401, "Wrong password!"),                               // 22
-            () -> testUserRegistration(captainNemoWrongUser, 401, "Wrong user"),                                // 23
-            () -> testApi(null, "", 401, getEmployeePaymentApi, "GET", "This api only for authenticated user"), // 24
-
-            // ============================================================================== testing changing password
-            () -> printTestingFields("=================================== testing changing password"),
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ================================================== testing user registration negative tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 1
+            () -> testApi(null, jDEmptyName, 400, signUpApi, "POST", "Empty name field!"),                      // 2
+            () -> testApi(null, jDNoName, 400, signUpApi, "POST", "Name field is absent!"),                     // 3
+            () -> testApi(null, jDEmptyLastName, 400, signUpApi, "POST", "Empty lastname field!"),              // 4
+            () -> testApi(null, jDNoLastName, 400, signUpApi, "POST", "Lastname field is absent!"),             // 5
+            () -> testApi(null, jDEmptyEmail, 400, signUpApi, "POST", "Empty email field!"),                    // 6
+            () -> testApi(null, jDNoEmail, 400, signUpApi, "POST", "Email field is absent!"),                   // 7
+            () -> testApi(null, jDEmptyPassword, 400, signUpApi, "POST", "Empty password field!"),              // 8
+            () -> testApi(null, jDNoPassword, 400, signUpApi, "POST", "Password field is absent!"),             // 9
+            () -> testApi(null, jDWrongEmail1, 400, signUpApi, "POST", "Wrong email!"),                         // 10
+            () -> testApi(null, jDWrongEmail2, 400, signUpApi, "POST", "Wrong email!"),                         // 11
+            () -> testBreachedPass(signUpApi, "", "", jDCorrectUser),                                           // 12
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ================================================== testing user registration positive tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 13
+            () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 14
+            () -> testPostSignUpResponse(maxMusLower, new String[]{"ROLE_USER"}),                               // 15
+            () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 16
+            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 17
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ================================================== testing user registration negative tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 18
+            () -> testApi(null, jDCorrectUser, 400, signUpApi, "POST", "User must be unique!"),                 // 19
+            () -> testUserDuplicates(jDCorrectUser),                                                            // 20
+            () -> testApi(null, jDLower, 400, signUpApi, "POST", "User must be unique (ignorecase)!"),          // 21
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================= test authentication, positive tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 22
+            () -> testUserRegistration(maxMusLower, 200, "User must login!"),                                   // 23
+            () -> testUserRegistration(maxMusCorrectUser, 200, "Login case insensitive!"),                      // 24
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================= test authentication, negative tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 25
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 26
+            () -> testUserRegistration(maxMusWrongEmail, 401, "Wrong password!"),                               // 27
+            () -> testUserRegistration(captainNemoWrongUser, 401, "Wrong user"),                                // 28
+            () -> testApi(null, "", 401, getEmployeePaymentApi, "GET", "This api only for authenticated user"), // 29
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ==================================================================== test changing password
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 30
             () -> testApi(null, jDDuplicatePass, 401, changePassApi, "POST",
-                    "This api only for authenticated user"),                                                    // 25
+                    "This api only for authenticated user"),                                                    // 31
             () -> testApi(jDCorrectUser, jDShortPass, 400, changePassApi, "POST",
-                    "The password length must be at least 12 chars!"),                                          // 26
+                    "The password length must be at least 12 chars!"),                                          // 32
             () -> testApi(jDCorrectUser, jDDuplicatePass, 400, changePassApi, "POST",
-                    "The passwords must be different!"),                                                        // 27
-            () -> testBreachedPass(changePassApi, "JohnDoe@acme.com", "oMoa3VvqnLxW", jDDuplicatePass),         // 28
-            () -> testChangePassword(jDPass, jDCorrectUser),                                                    // 29
-            () -> testApi(jDCorrectUser, "", 401, adminApi, "GET", "Password must be changed!"),                // 30
-            () -> testApi(jDNewPass, "", 200, adminApi, "GET", "Password must be changed!"),                    // 31
-
-            // ==================================================================================== testing persistence
-            () -> printTestingFields("=================================== testing persistence"),
-            this::restartApplication,                                                                           // 32
+                    "The passwords must be different!"),                                                        // 33
+            () -> testBreachedPass(changePassApi, "JohnDoe@acme.com", "oMoa3VvqnLxW", jDDuplicatePass),         // 34
+            () -> testChangePassword(jDPass, jDCorrectUser),                                                    // 35
+            () -> testApi(jDCorrectUser, "", 401, adminApi, "GET", "Password must be changed!"),                // 36
+            () -> testApi(jDNewPass, "", 200, adminApi, "GET", "Password must be changed!"),                    // 37
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ========================================================================== test persistence
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 38
+            this::restartApplication,                                                                           // 39
             () -> testUserRegistration(maxMusCorrectUser, 200,
-                    "User must login, after restarting! Check persistence."),                                   // 33
-
-            // ================================================================================ testing admin functions
-            // ========================================================================================================
-            // ============================================================================================ delete user
-            () -> printTestingFields("=================================== testing admin functions - delete user"),
-            () -> testGetAdminApi(jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),     // 34
+                    "User must login, after restarting! Check persistence."),                                   // 40
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================== test admin functions - delete user
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 41
+            () -> testGetAdminApi(jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),     // 42
             () -> testDeleteAdminApi(HttpStatus.OK, jDNewPass, "petrpetrov@acme.com",
-                    "Deleted successfully!", "Trying to delete user"),                                          // 35
-            () -> testGetAdminApi(jDNewPass, secondResponseAdminApi, "User must be deleted!"),                  // 36
+                    "Deleted successfully!", "Trying to delete user"),                                          // 43
+            () -> testGetAdminApi(jDNewPass, secondResponseAdminApi, "User must be deleted!"),                  // 44
             () -> testDeleteAdminApi(HttpStatus.BAD_REQUEST, jDNewPass,
-                    "johndoe@acme.com", "Can't remove ADMINISTRATOR role!", "Trying to delete admin"),          // 37
+                    "johndoe@acme.com", "Can't remove ADMINISTRATOR role!", "Trying to delete admin"),          // 45
             () -> testDeleteAdminApi(HttpStatus.NOT_FOUND, jDNewPass,
-                    "johndoe@goole.com", "User not found!", "Trying to delete non existing user"),              // 38
-
-            // ========================================================================================= changing roles
-            () -> printTestingFields("=================================== testing admin functions - changing roles"),
+                    "johndoe@goole.com", "User not found!", "Trying to delete non existing user"),              // 46
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ===================================================== test admin functions - changing roles
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 47
             () -> testPutAdminApi(HttpStatus.OK, jDNewPass, ivanIvanovCorrectUser,
-                    "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 39
-            () -> testGetAdminApi(jDNewPass, thirdResponseAdminApi, "Role must be changed!"),                   // 40
+                    "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 48
+            () -> testGetAdminApi(jDNewPass, thirdResponseAdminApi, "Role must be changed!"),                   // 49
             () -> testPutAdminApi(HttpStatus.OK, jDNewPass, ivanIvanovCorrectUser,
-                    "ACCOUNTANT", "REMOVE", new String[]{"ROLE_USER"}, ""),                                     // 41
-            () -> testGetAdminApi(jDNewPass, secondResponseAdminApi, "Role must be changed!"),                  // 42
+                    "ACCOUNTANT", "REMOVE", new String[]{"ROLE_USER"}, ""),                                     // 50
+            () -> testGetAdminApi(jDNewPass, secondResponseAdminApi, "Role must be changed!"),                  // 51
             () -> testPutAdminApi(HttpStatus.OK, jDNewPass, ivanIvanovCorrectUser,
-                    "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 43
-
-            // =============================================================== testing admin functions - negative tests
-            () -> printTestingFields("=================================== testing admin functions - negative tests"),
+                    "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 52
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ===================================================== test admin functions - negative tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 53
             () -> testPutAdminApi(HttpStatus.NOT_FOUND, jDNewPass, ivanIvanovCorrectUser,
-                    "NEW_ROLE", "GRANT", new String[]{"Role not found!"}, "Trying add not existing role!"),     // 44
+                    "NEW_ROLE", "GRANT", new String[]{"Role not found!"}, "Trying add not existing role!"),     // 54
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass,
                     ivanIvanovCorrectUser, "ADMINISTRATOR", "GRANT",
                     new String[]{"The user cannot combine administrative and business roles!"},
-                    "Trying add administrative role to business user!"),                                        // 45
+                    "Trying add administrative role to business user!"),                                        // 55
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass, jDNewPass,
                     "USER", "GRANT", new String[]{"The user cannot combine administrative and business roles!"},
-                    "Trying add business role to administrator!"),                                              // 46
+                    "Trying add business role to administrator!"),                                              // 56
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass, jDNewPass,
                     "ADMINISTRATOR", "REMOVE", new String[]{"Can't remove ADMINISTRATOR role!"},
-                    "Trying remove administrator role!"),                                                       // 47
+                    "Trying remove administrator role!"),                                                       // 57
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass, maxMusCorrectUser,
                     "USER", "REMOVE", new String[]{"The user must have at least one role!"},
-                    "Trying remove single role!"),                                                              // 48
+                    "Trying remove single role!"),                                                              // 58
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass, maxMusCorrectUser,
                     "ACCOUNTANT", "REMOVE", new String[]{"The user does not have a role!"},
-                    "Trying remove not granted role!"),                                                         // 49
+                    "Trying remove not granted role!"),                                                         // 59
             () -> testPutAdminApi(HttpStatus.NOT_FOUND, jDNewPass, captainNemoWrongUser,
                     "ACCOUNTANT", "REMOVE", new String[]{"User not found!"},
-                    "Trying remove role from non existing user!"),                                              // 50
-
-            // ======================================================================= testing role model negative case
-            () -> printTestingFields("=================================== testing role model negative case"),
+                    "Trying remove role from non existing user!"),                                              // 60
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ========================================================== test role model - negative cases
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 61
             () -> testRoleModelNegative(putRoleApi, "PUT", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 51
+                    "Trying to access administrative endpoint with business user"),                             // 62
             () -> testRoleModelNegative("/api/admin/user/", "GET", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 52
+                    "Trying to access administrative endpoint with business user"),                             // 63
             () -> testRoleModelNegative("/api/admin/user", "DELETE", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 53
+                    "Trying to access administrative endpoint with business user"),                             // 64
             () -> testRoleModelNegative(postPaymentApi, "POST", jDNewPass,
-                    "Trying to access business endpoint with administrative user"),                             // 54
+                    "Trying to access business endpoint with administrative user"),                             // 65
             () -> testRoleModelNegative(postPaymentApi, "POST", maxMusCorrectUser,
-                    "Trying to access endpoint with wrong role"),                                               // 55
+                    "Trying to access endpoint with wrong role"),                                               // 66
             () -> testRoleModelNegative(getEmployeePaymentApi, "GET", jDNewPass,
-                    "Trying to access business endpoint with administrative user"),                             // 56
-
-            // ================================================================================= testing business logic
-            () -> printTestingFields("=================================== testing business logic"),
+                    "Trying to access business endpoint with administrative user"),                             // 67
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ==================================================================== testing business logic
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 68
             () -> testPostPaymentResponse(ivanIvanovCorrectUser, paymentsList, 200,
-                    "Payment list must be added"),                                                              // 57
-            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 58
-            () -> testGetPaymentResponse(ivanIvanovCorrectUser, correctPaymentResponseIvanov),                  // 59
+                    "Payment list must be added"),                                                              // 69
+            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 70
+            () -> testGetPaymentResponse(ivanIvanovCorrectUser, correctPaymentResponseIvanov),                  // 71
             () -> testPostPaymentResponse(ivanIvanovCorrectUser, wrongPaymentListSalary, 400,
-                    "Wrong salary in payment list"),                                                            // 60
-            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 61
+                    "Wrong salary in payment list"),                                                            // 72
+            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 73
             () -> testPostPaymentResponse(ivanIvanovCorrectUser, wrongPaymentListData, 400,
-                    "Wrong data in payment list"),                                                              // 62
-            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 63
+                    "Wrong data in payment list"),                                                              // 74
+            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 75
             () -> testPostPaymentResponse(ivanIvanovCorrectUser, wrongPaymentListDuplicate, 400,
-                    "Duplicated entry in payment list"),                                                        // 64
-            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 65
+                    "Duplicated entry in payment list"),                                                        // 76
+            () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 77
             () -> testPutPaymentResponse(ivanIvanovCorrectUser, updatePaymentWrongDate, 400,
-                    "Wrong date in request body!"),                                                             // 66
+                    "Wrong date in request body!"),                                                             // 78
             () -> testPutPaymentResponse(ivanIvanovCorrectUser, updatePaymentWrongSalary, 400,
-                    "Wrong salary in request body!"),                                                           // 67
+                    "Wrong salary in request body!"),                                                           // 79
             () -> testPutPaymentResponse(ivanIvanovCorrectUser, updatePayment, 200,
-                    "Salary must be update!"),                                                                  // 68
+                    "Salary must be update!"),                                                                  // 80
             () -> testGetPaymentResponseParam(maxMusCorrectUser, 200, updatePayment, updatePaymentResponse,
-                    "Salary must be update!"),                                                                  // 69
+                    "Salary must be update!"),                                                                  // 81
             () -> testGetPaymentResponseParam(maxMusCorrectUser, 400, updatePaymentWrongDate, updatePaymentResponse,
-                    "Wrong date in request!"),                                                                  // 70
+                    "Wrong date in request!"),                                                                  // 82
     };
 }

@@ -634,6 +634,11 @@ public class LoggingSecurityEventsTest extends SpringTest {
             String login = userJson.get("email").getAsString().toLowerCase();
             if (request != null) {
                 request = request.basicAuth(login, password);
+                System.out.println("""
+                        ------------------------------------------------
+                        --------------------------------- request ------
+                        ------------------------------------------------""");
+                System.out.println(getPrettyJson(getJson(request.getContent())));
             }
         }
         assert request != null;
@@ -645,206 +650,242 @@ public class LoggingSecurityEventsTest extends SpringTest {
                                   + message + "\n"
                                   + "Response body:\n" + response.getContent() + "\n");
         }
+        System.out.println("""
+                ------------------------------------------------
+                --------------------------------- response -----
+                ------------------------------------------------""");
+        System.out.println(response.getContent());
         return response;
+    }
+
+    private CheckResult printTestingFields(String testingField) {
+        System.out.print(testingField);
+        return CheckResult.correct();
     }
 
     private String getSub(String[] src, int position) {
         return convert(Arrays.copyOfRange(src, 0, position));
     }
 
-    private CheckResult deleteDatabaseFiles(Path database, Path tempDatabase) {
-        try {
-            Files.delete(database);
-            Files.delete(tempDatabase);
-//        } catch (NoSuchFileException e) {
-//            System.err.format("%s: no such" + " file or directory\n", database);
-//        } catch (DirectoryNotEmptyException e) {
-//            System.err.format("%s not empty\n", database);
-//        } catch (IOException e) {
-//            // =============================================================== file permission problems are caught here
-//            System.err.println(e.getMessage());
-//        }
-//        try {
-//            Files.delete(database);
-//        } catch (NoSuchFileException e) {
-//            System.err.format("%s: no such" + " file or directory\n", database);
-//        } catch (DirectoryNotEmptyException e) {
-//            System.err.format("%s not empty\n", database);
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        }
-        return CheckResult.correct();
-    }
-
     @DynamicTest
     DynamicTesting[] dt = new DynamicTesting[]{
-//            () -> deleteDatabaseFiles(Path.of(databasePath), Path.of(databasePath + "-real")),
-            // ==================================================================== create administrator and auditor
-            () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 1
-            () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 2
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ========================================================== create administrator and auditor
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 1
+            () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 2
+            () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 3
             () -> testPutAdminApi(HttpStatus.OK, jDCorrectUser, ivanIvanovCorrectUser, "AUDITOR", "GRANT",
-                    new String[]{"ROLE_AUDITOR", "ROLE_USER"}, ""),                                             // 3
-
-            // ============================================================ testing user registration positive tests
+                    new String[]{"ROLE_AUDITOR", "ROLE_USER"}, ""),                                             // 4
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ================================================== testing user registration positive tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 5
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 3),
-                    0, "'CREATE_USER' security event missing"),                                                 // 4
+                    0, "'CREATE_USER' security event missing"),                                                 // 6
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 3),
-                    1, "'CREATE_USER' security event missing"),                                                 // 5
+                    1, "'CREATE_USER' security event missing"),                                                 // 7
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 3),
-                    2, "'GRANT_ROLE' security event missing"),                                                  // 6
-            () -> testPostSignUpResponse(maxMusLower, new String[]{"ROLE_USER"}),                               // 7
+                    2, "'GRANT_ROLE' security event missing"),                                                  // 8
+            () -> testPostSignUpResponse(maxMusLower, new String[]{"ROLE_USER"}),                               // 9
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 4),
-                    3, "'CREATE_USER' security event missing"),                                                 // 8
-            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 9
+                    3, "'CREATE_USER' security event missing"),                                                 // 10
+            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 11
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 5),
-                    4, "'CREATE_USER' security event missing"),                                                 // 10
-
-            // ================================================================== test authentication, positive tests
-            () -> testUserRegistration(maxMusLower, 200, "User must login!"),                                   // 11
-            () -> testUserRegistration(maxMusCorrectUser, 200, "Login case insensitive!"),                      // 12
-
-            // ================================================================== test authentication, negative tests
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 13
+                    4, "'CREATE_USER' security event missing"),                                                 // 12
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================= test authentication, positive tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 13
+            () -> testUserRegistration(maxMusLower, 200, "User must login!"),                                   // 14
+            () -> testUserRegistration(maxMusCorrectUser, 200, "Login case insensitive!"),                      // 15
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================= test authentication, negative tests
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 16
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 17
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 6),
-                    5, "'LOGIN_FAILED' security event missing"),                                                // 14
-            () -> testUserRegistration(maxMusWrongEmail, 401, "Wrong password!"),                               // 15
+                    5, "'LOGIN_FAILED' security event missing"),                                                // 18
+            () -> testUserRegistration(maxMusWrongEmail, 401, "Wrong password!"),                               // 19
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 7),
-                    6, "'LOGIN_FAILED' security event missing"),                                                // 16
-            () -> testUserRegistration(captainNemoWrongUser, 401, "Wrong user"),                                // 17
-            this::testApi,                                                                                      // 18
+                    6, "'LOGIN_FAILED' security event missing"),                                                // 20
+            () -> testUserRegistration(captainNemoWrongUser, 401, "Wrong user"),                                // 21
+            this::testApi,                                                                                      // 22
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 8),
-                    7, "'LOGIN_FAILED' security event missing"),                                                // 19
-
-            // ================================================================================== testing persistence
-            this::restartApplication,                                                                           // 20
+                    7, "'LOGIN_FAILED' security event missing"),                                                // 23
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ========================================================================== test persistence
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 24
+            this::restartApplication,                                                                           // 25
             () -> testUserRegistration(maxMusCorrectUser, 200,
-                    "User must login, after restarting! Check persistence."),                                   // 21
-
-            // ======================================================================================= changing roles
+                    "User must login, after restarting! Check persistence."),                                   // 26
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ===================================================== test admin functions - changing roles
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 27
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDCorrectUser, jDCorrectUser, "AUDITOR", "GRANT",
                     new String[]{"The user cannot combine administrative and business roles!"},
-                    "Trying add administrative role to business user!"),                                        // 22
+                    "Trying add administrative role to business user!"),                                        // 28
             () -> testPutAdminApi(HttpStatus.OK, jDCorrectUser, petrPetrovCorrectUser, "ACCOUNTANT", "GRANT",
-                    new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, "Trying to add role ACCOUNTANT to user"),     // 23
+                    new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, "Trying to add role ACCOUNTANT to user"),     // 29
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 9),
-                    8, "'GRANT_ROLE' security event missing"),                                                  // 24
+                    8, "'GRANT_ROLE' security event missing"),                                                  // 30
             () -> testPutAdminApi(HttpStatus.OK, jDCorrectUser, petrPetrovCorrectUser, "ACCOUNTANT", "REMOVE",
-                    new String[]{"ROLE_USER"}, "Trying to remove role ACCOUNTANT from user"),                   // 25
+                    new String[]{"ROLE_USER"}, "Trying to remove role ACCOUNTANT from user"),                   // 31
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 10),
-                    9, "'REMOVE_ROLE' security event missing"),                                                 // 26
-
-            // ========================================================================================== delete user
-            () -> testDeleteAdminApi(jDCorrectUser),                                                            // 27
+                    9, "'REMOVE_ROLE' security event missing"),                                                 // 32
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ======================================================== test admin functions - delete user
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 33
+            () -> testDeleteAdminApi(jDCorrectUser),                                                            // 34
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 11),
-                    10, "'DELETE_USER' security event missing"),                                                // 28
-
-            // ====================================================================================== change password
-            () -> testChangePassword(jDPass, jDCorrectUser),                                                    // 29
+                    10, "'DELETE_USER' security event missing"),                                                // 35
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ==================================================================== test changing password
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 36
+            () -> testChangePassword(jDPass, jDCorrectUser),                                                    // 37
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 12),
-                    11, "'CHANGE_PASSWORD' security event missing"),                                            // 30
-
-            // ===================================================================== testing role model negative case
+                    11, "'CHANGE_PASSWORD' security event missing"),                                            // 38
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ========================================================== test role model - negative cases
+                    ===========================================================================================
+                    ===========================================================================================
+                    """),                                                                                       // 39
             () -> testRoleModelNegative(putRoleApi, "PUT", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 31
+                    "Trying to access administrative endpoint with business user"),                             // 40
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 13),
-                    12, "'ACCESS_DENIED' security event missing"),                                              // 32
+                    12, "'ACCESS_DENIED' security event missing"),                                              // 41
             () -> testRoleModelNegative(adminApi, "GET", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 33
+                    "Trying to access administrative endpoint with business user"),                             // 42
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 14),
-                    13, "'ACCESS_DENIED' security event missing"),                                              // 34
+                    13, "'ACCESS_DENIED' security event missing"),                                              // 43
             () -> testRoleModelNegative(adminApi, "DELETE", ivanIvanovCorrectUser,
-                    "Trying to access administrative endpoint with business user"),                             // 35
+                    "Trying to access administrative endpoint with business user"),                             // 44
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 15),
-                    14, "'ACCESS_DENIED' security event missing"),                                              // 36
+                    14, "'ACCESS_DENIED' security event missing"),                                              // 45
             () -> testRoleModelNegative(postPaymentApi, "POST", jDNewPass,
-                    "Trying to access business endpoint with administrative user"),                             // 37
+                    "Trying to access business endpoint with administrative user"),                             // 46
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 16),
-                    15, "'ACCESS_DENIED' security event missing"),                                              // 38
+                    15, "'ACCESS_DENIED' security event missing"),                                              // 47
             () -> testRoleModelNegative(postPaymentApi, "POST", maxMusCorrectUser,
-                    "Trying to access endpoint with wrong role"),                                               // 39
+                    "Trying to access endpoint with wrong role"),                                               // 48
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 17),
-                    16, "'ACCESS_DENIED' security event missing"),                                              // 40
+                    16, "'ACCESS_DENIED' security event missing"),                                              // 49
             () -> testRoleModelNegative(getEmployeePaymentApi, "GET", jDNewPass,
-                    "Trying to access business endpoint with administrative user"),                             // 41
+                    "Trying to access business endpoint with administrative user"),                             // 50
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 18),
-                    17, "'ACCESS_DENIED' security event missing"),                                              // 42
+                    17, "'ACCESS_DENIED' security event missing"),                                              // 51
             () -> testRoleModelNegative(auditorApi, "GET", jDNewPass,
-                    "Trying to access business endpoint with administrative user"),                             // 43
+                    "Trying to access business endpoint with administrative user"),                             // 52
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 19),
-                    18, "'ACCESS_DENIED' security event missing"),                                              // 44
-
-            // ================================================================================= testing locking user
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 45
+                    18, "'ACCESS_DENIED' security event missing"),                                              // 53
+            () -> printTestingFields("""
+                    ===========================================================================================
+                    ===========================================================================================
+                    ================================ test admin functions - testing locking & unlocking an user
+                    ============== testing locking user after consecutive failed login attempts ("brute force")
+                    ===========================================================================================
+                    """),                                                                                       // 54
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 55
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 20),
-                    19, "'LOGIN_FAILED' security event missing"),                                               // 46
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 47
+                    19, "'LOGIN_FAILED' security event missing"),                                               // 56
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 57
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 21),
-                    20, "'LOGIN_FAILED' security event missing"),                                               // 48
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 49
+                    20, "'LOGIN_FAILED' security event missing"),                                               // 58
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 59
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 22),
-                    21, "'LOGIN_FAILED' security event missing"),                                               // 50
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 51
+                    21, "'LOGIN_FAILED' security event missing"),                                               // 60
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 61
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 23),
-                    22, "'LOGIN_FAILED' security event missing"),                                               // 52
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 53
+                    22, "'LOGIN_FAILED' security event missing"),                                               // 62
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 63
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 26),
-                    23, "'LOGIN_FAILED' security event missing"),                                               // 54
-            () -> testLocking(maxMusCorrectUser, "User must be locked after 5 attempts with wrong password"),   // 55
+                    23, "'LOGIN_FAILED' security event missing"),                                               // 64
+            () -> testLocking(maxMusCorrectUser, "User must be locked after 5 attempts with wrong password"),   // 65
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 26),
-                    24, "'BRUTE_FORCE' security event missing"),                                                // 56
+                    24, "'BRUTE_FORCE' security event missing"),                                                // 66
             () -> testPutAccessApi(HttpStatus.OK, jDNewPass, maxMusCorrectUser, "UNLOCK",
-                    "User maxmustermann@acme.com unlocked!", "User must be unlocked through admin endpoint"),   // 57
+                    "User maxmustermann@acme.com unlocked!", "User must be unlocked through admin endpoint"),   // 67
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 27),
-                    25, "'LOCK_USER' security event missing"),                                                  // 58
+                    25, "'LOCK_USER' security event missing"),                                                  // 68
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 27),
-                    26, "'UNLOCK_USER' security event missing"),                                                // 59
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 60
+                    26, "'UNLOCK_USER' security event missing"),                                                // 69
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 70
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 28),
-                    27, "'LOGIN_FAILED' security event missing"),                                               // 61
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 62
+                    27, "'LOGIN_FAILED' security event missing"),                                               // 71
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 72
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 29),
-                    28, "'LOGIN_FAILED' security event missing"),                                               // 63
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 64
+                    28, "'LOGIN_FAILED' security event missing"),                                               // 73
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 74
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 30),
-                    29, "'LOGIN_FAILED' security event missing"),                                               // 65
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 66
+                    29, "'LOGIN_FAILED' security event missing"),                                               // 75
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 76
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 31),
-                    30, "'LOGIN_FAILED' security event missing"),                                               // 67
-            () -> testUserRegistration(maxMusCorrectUser, 200, "User must login!"),                             // 68
-            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 69
+                    30, "'LOGIN_FAILED' security event missing"),                                               // 77
+            () -> testUserRegistration(maxMusCorrectUser, 200, "User must login!"),                             // 78
+            () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 79
             () -> testUserRegistration(maxMusCorrectUser, 200,
-                    "Counter of failed login attempts must be reset after successfully login!"),                // 70
+                    "Counter of failed login attempts must be reset after successfully login!"),                // 80
             () -> testPutAccessApi(HttpStatus.OK, jDNewPass, maxMusCorrectUser, "LOCK",
-                    "User maxmustermann@acme.com locked!", ""),                                                 // 71
+                    "User maxmustermann@acme.com locked!", ""),                                                 // 81
             () -> testAuditorApi(ivanIvanovCorrectUser, getSub(auditorResponseApi, 33),
-                    31, "'LOCK_USER' security event missing"),                                                  // 72
-            () -> testLocking(maxMusCorrectUser, "User must be locked through admin endpoint"),                 // 73
+                    31, "'LOCK_USER' security event missing"),                                                  // 82
+            () -> testLocking(maxMusCorrectUser, "User must be locked through admin endpoint"),                 // 83
             () -> testPutAccessApi(HttpStatus.BAD_REQUEST, jDNewPass,
-                    jDCorrectUser, "LOCK", "Can't lock the ADMINISTRATOR!", ""),                                // 74
-            () -> testGetAdminApi(200, jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),// 75
-            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 76
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 77
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 78
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 79
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 80
-            () -> testUserRegistration(petrPetrovCorrectUser, 200,
-                    "User must be locked only after 5 attempts with wrong password"),                           // 81
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 82
-            () -> testUserRegistration(petrPetrovCorrectUser, 200,
-                    "In case of a successful login, reset the counter of the failed attempt."),                 // 83
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 84
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 85
-            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 86
+                    jDCorrectUser, "LOCK", "Can't lock the ADMINISTRATOR!", ""),                                // 84
+            () -> testGetAdminApi(200, jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),// 85
+            () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 86
             () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 87
             () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 88
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 89
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 90
+            () -> testUserRegistration(petrPetrovCorrectUser, 200,
+                    "User must be locked only after 5 attempts with wrong password"),                           // 91
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 92
+            () -> testUserRegistration(petrPetrovCorrectUser, 200,
+                    "In case of a successful login, reset the counter of the failed attempt."),                 // 93
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 94
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 95
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 96
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 97
+            () -> testUserRegistration(petrPetrovWrongPassword, 401, "Wrong password!"),                        // 98
             () -> testLocking(petrPetrovCorrectUser,
-                    "User must be locked after 5 attempts with wrong password!"),                               // 89
-            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 90
-            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 91
-            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 92
-            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 93
-            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 94
+                    "User must be locked after 5 attempts with wrong password!"),                               // 99
+            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 100
+            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 101
+            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 102
+            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 103
+            () -> testGetAdminApi(401, jDCorrectUser, firstResponseAdminApi, "Wrong password for admin"),       // 104
             () -> testGetAdminApi(200, jDNewPass, secondResponseAdminApi,
-                    "Api must be available to admin user")                                                      // 95
+                    "Api must be available to admin user")                                                      // 105
     };
 }
