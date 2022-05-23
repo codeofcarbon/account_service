@@ -3,6 +3,7 @@ package com.codeofcarbon.accountservicetests;
 import com.codeofcarbon.accountservice.AccountServiceApplication;
 import com.google.gson.*;
 import org.hyperskill.hstest.dynamic.DynamicTest;
+import org.hyperskill.hstest.dynamic.SystemHandler;
 import org.hyperskill.hstest.dynamic.input.DynamicTesting;
 import org.hyperskill.hstest.exception.outcomes.*;
 import org.hyperskill.hstest.mocks.web.request.HttpRequest;
@@ -11,6 +12,11 @@ import org.hyperskill.hstest.stage.SpringTest;
 import org.hyperskill.hstest.testcase.CheckResult;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.hyperskill.hstest.common.JsonUtils.*;
@@ -19,7 +25,7 @@ import static org.hyperskill.hstest.testing.expect.json.JsonChecker.*;
 
 public class BusinessLogicTest extends SpringTest {
 
-    private final static String databasePath = "../src/main/resources/service_db.mv.db";
+    private final static String databasePath = "./src/main/resources/service_db.mv.db";
     private final static String signUpApi = "/api/auth/signup";
     private final static String changePassApi = "/api/auth/changepass";
     private final static String getEmployeePaymentApi = "/api/empl/payment";
@@ -720,9 +726,15 @@ public class BusinessLogicTest extends SpringTest {
         return response;
     }
 
+    private CheckResult printTestingFields(String testingField) {
+        System.err.println(testingField);
+        return CheckResult.correct();
+    }
+
     @DynamicTest
     DynamicTesting[] dt = new DynamicTesting[]{
             // =============================================================== testing user registration negative tests
+            () -> printTestingFields("=================================== testing user registration negative tests"),
             () -> testApi(null, jDEmptyName, 400, signUpApi, "POST", "Empty name field!"),                      // 1
             () -> testApi(null, jDNoName, 400, signUpApi, "POST", "Name field is absent!"),                     // 2
             () -> testApi(null, jDEmptyLastName, 400, signUpApi, "POST", "Empty lastname field!"),              // 3
@@ -736,27 +748,32 @@ public class BusinessLogicTest extends SpringTest {
             () -> testBreachedPass(signUpApi, "", "", jDCorrectUser),                                           // 11
 
             // =============================================================== testing user registration positive tests
+            () -> printTestingFields("=================================== testing user registration positive tests"),
             () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 12
             () -> testPostSignUpResponse(maxMusLower, new String[]{"ROLE_USER"}),                               // 13
             () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 14
             () -> testPostSignUpResponse(petrPetrovCorrectUser, new String[]{"ROLE_USER"}),                     // 15
 
             // =============================================================== testing user registration negative tests
+            () -> printTestingFields("=================================== testing user registration negative tests"),
             () -> testApi(null, jDCorrectUser, 400, signUpApi, "POST", "User must be unique!"),                 // 16
             () -> testUserDuplicates(jDCorrectUser),                                                            // 17
             () -> testApi(null, jDLower, 400, signUpApi, "POST", "User must be unique (ignorecase)!"),          // 18
 
             // ==================================================================== test authentication, positive tests
+            () -> printTestingFields("=================================== test authentication, positive tests"),
             () -> testUserRegistration(maxMusLower, 200, "User must login!"),                                   // 19
             () -> testUserRegistration(maxMusCorrectUser, 200, "Login case insensitive!"),                      // 20
 
             // ==================================================================== test authentication, negative tests
+            () -> printTestingFields("=================================== test authentication, negative tests"),
             () -> testUserRegistration(maxMusWrongPassword, 401, "Wrong password!"),                            // 21
             () -> testUserRegistration(maxMusWrongEmail, 401, "Wrong password!"),                               // 22
             () -> testUserRegistration(captainNemoWrongUser, 401, "Wrong user"),                                // 23
             () -> testApi(null, "", 401, getEmployeePaymentApi, "GET", "This api only for authenticated user"), // 24
 
             // ============================================================================== testing changing password
+            () -> printTestingFields("=================================== testing changing password"),
             () -> testApi(null, jDDuplicatePass, 401, changePassApi, "POST",
                     "This api only for authenticated user"),                                                    // 25
             () -> testApi(jDCorrectUser, jDShortPass, 400, changePassApi, "POST",
@@ -769,6 +786,7 @@ public class BusinessLogicTest extends SpringTest {
             () -> testApi(jDNewPass, "", 200, adminApi, "GET", "Password must be changed!"),                    // 31
 
             // ==================================================================================== testing persistence
+            () -> printTestingFields("=================================== testing persistence"),
             this::restartApplication,                                                                           // 32
             () -> testUserRegistration(maxMusCorrectUser, 200,
                     "User must login, after restarting! Check persistence."),                                   // 33
@@ -776,6 +794,7 @@ public class BusinessLogicTest extends SpringTest {
             // ================================================================================ testing admin functions
             // ========================================================================================================
             // ============================================================================================ delete user
+            () -> printTestingFields("=================================== testing admin functions - delete user"),
             () -> testGetAdminApi(jDNewPass, firstResponseAdminApi, "Api must be available to admin user"),     // 34
             () -> testDeleteAdminApi(HttpStatus.OK, jDNewPass, "petrpetrov@acme.com",
                     "Deleted successfully!", "Trying to delete user"),                                          // 35
@@ -786,6 +805,7 @@ public class BusinessLogicTest extends SpringTest {
                     "johndoe@goole.com", "User not found!", "Trying to delete non existing user"),              // 38
 
             // ========================================================================================= changing roles
+            () -> printTestingFields("=================================== testing admin functions - changing roles"),
             () -> testPutAdminApi(HttpStatus.OK, jDNewPass, ivanIvanovCorrectUser,
                     "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 39
             () -> testGetAdminApi(jDNewPass, thirdResponseAdminApi, "Role must be changed!"),                   // 40
@@ -796,6 +816,7 @@ public class BusinessLogicTest extends SpringTest {
                     "ACCOUNTANT", "GRANT", new String[]{"ROLE_ACCOUNTANT", "ROLE_USER"}, ""),                   // 43
 
             // =============================================================== testing admin functions - negative tests
+            () -> printTestingFields("=================================== testing admin functions - negative tests"),
             () -> testPutAdminApi(HttpStatus.NOT_FOUND, jDNewPass, ivanIvanovCorrectUser,
                     "NEW_ROLE", "GRANT", new String[]{"Role not found!"}, "Trying add not existing role!"),     // 44
             () -> testPutAdminApi(HttpStatus.BAD_REQUEST, jDNewPass,
@@ -819,6 +840,7 @@ public class BusinessLogicTest extends SpringTest {
                     "Trying remove role from non existing user!"),                                              // 50
 
             // ======================================================================= testing role model negative case
+            () -> printTestingFields("=================================== testing role model negative case"),
             () -> testRoleModelNegative(putRoleApi, "PUT", ivanIvanovCorrectUser,
                     "Trying to access administrative endpoint with business user"),                             // 51
             () -> testRoleModelNegative("/api/admin/user/", "GET", ivanIvanovCorrectUser,
@@ -833,6 +855,7 @@ public class BusinessLogicTest extends SpringTest {
                     "Trying to access business endpoint with administrative user"),                             // 56
 
             // ================================================================================= testing business logic
+            () -> printTestingFields("=================================== testing business logic"),
             () -> testPostPaymentResponse(ivanIvanovCorrectUser, paymentsList, 200,
                     "Payment list must be added"),                                                              // 57
             () -> testGetPaymentResponse(maxMusCorrectUser, correctPaymentResponse),                            // 58

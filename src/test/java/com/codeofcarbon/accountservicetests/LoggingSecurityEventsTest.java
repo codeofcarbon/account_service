@@ -11,6 +11,9 @@ import org.hyperskill.hstest.stage.SpringTest;
 import org.hyperskill.hstest.testcase.CheckResult;
 import org.springframework.http.HttpStatus;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import static org.hyperskill.hstest.common.JsonUtils.*;
@@ -19,7 +22,7 @@ import static org.hyperskill.hstest.testing.expect.json.JsonChecker.*;
 
 public class LoggingSecurityEventsTest extends SpringTest {
 
-    private final static String databasePath = "../src/main/resources/service_db.mv.db";
+    private final static String databasePath = "./src/main/resources/service_db.mv.db";
     private final static String signUpApi = "/api/auth/signup";
     private final static String changePassApi = "/api/auth/changepass";
     private final static String getEmployeePaymentApi = "/api/empl/payment";
@@ -649,8 +652,33 @@ public class LoggingSecurityEventsTest extends SpringTest {
         return convert(Arrays.copyOfRange(src, 0, position));
     }
 
+    private CheckResult deleteDatabaseFiles(Path database, Path tempDatabase) {
+        try {
+            Files.delete(database);
+            Files.delete(tempDatabase);
+//        } catch (NoSuchFileException e) {
+//            System.err.format("%s: no such" + " file or directory\n", database);
+//        } catch (DirectoryNotEmptyException e) {
+//            System.err.format("%s not empty\n", database);
+//        } catch (IOException e) {
+//            // =============================================================== file permission problems are caught here
+//            System.err.println(e.getMessage());
+//        }
+//        try {
+//            Files.delete(database);
+//        } catch (NoSuchFileException e) {
+//            System.err.format("%s: no such" + " file or directory\n", database);
+//        } catch (DirectoryNotEmptyException e) {
+//            System.err.format("%s not empty\n", database);
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+        return CheckResult.correct();
+    }
+
     @DynamicTest
     DynamicTesting[] dt = new DynamicTesting[]{
+//            () -> deleteDatabaseFiles(Path.of(databasePath), Path.of(databasePath + "-real")),
             // ==================================================================== create administrator and auditor
             () -> testPostSignUpResponse(jDCorrectUser, new String[]{"ROLE_ADMINISTRATOR"}),                    // 1
             () -> testPostSignUpResponse(ivanIvanovCorrectUser, new String[]{"ROLE_USER"}),                     // 2
