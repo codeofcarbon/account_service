@@ -375,7 +375,9 @@ public class LoggingSecurityEventsTest extends SpringTest {
      * @return instance of CheckResult class containing result of checks (CheckResult)
      */
     private CheckResult testUserRegistration(String user, int status, String message) {
+
         checkResponseStatus(user, "", status, getEmployeePaymentApi, "GET", message);
+
         return CheckResult.correct();
     }
 
@@ -630,11 +632,11 @@ public class LoggingSecurityEventsTest extends SpringTest {
         if (user != null) {
             JsonObject userJson = getJson(user).getAsJsonObject();
 
-            System.out.println("""
+                System.out.println("""
                         ------------------------------------------------
                         ------------------------------------- user -----
                         ------------------------------------------------""");
-            System.out.println(getPrettyJson(userJson));
+                System.out.println(getPrettyJson(userJson));
 
             String password = userJson.get("password").getAsString();
             String login = userJson.get("email").getAsString().toLowerCase();

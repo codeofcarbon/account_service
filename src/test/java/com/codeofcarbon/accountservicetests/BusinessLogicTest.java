@@ -291,7 +291,7 @@ public class BusinessLogicTest extends SpringTest {
 
         JsonObject jsonResponse = response.getJson().getAsJsonObject();
 
-        // ================================================================== check if password is presence in response
+        // ======================================================================== check password presence in response
         if (jsonResponse.get("password") != null) {
             return CheckResult.wrong("You must remove password from response\n" + jsonResponse);
         }
@@ -674,11 +674,13 @@ public class BusinessLogicTest extends SpringTest {
         if (user != null) {
             JsonObject userJson = getJson(user).getAsJsonObject();
 
-            System.out.println("""
+            if (!api.equals(signUpApi)) {
+                System.out.println("""
                         ------------------------------------------------
                         ------------------------------------- user -----
                         ------------------------------------------------""");
-            System.out.println(getPrettyJson(userJson));
+                System.out.println(getPrettyJson(userJson));
+            }
 
             String password = userJson.get("password").getAsString();
             String login = userJson.get("email").getAsString().toLowerCase();
