@@ -44,7 +44,7 @@ A project aimed at familiarizing oneself with the Spring Security module, the ba
 
 #### *>>> deleting user <<<*
 ![deleting user](src/main/resources/screenshots/deleting_user.png)
-![deleting user 2](src/main/resources/screenshots/deleting_user.png)
+![deleting user 2](src/main/resources/screenshots/deleting_user_2.png)
 
 #### *>>> locking user <<<*
 ![locking user](src/main/resources/screenshots/locking_user.png)
