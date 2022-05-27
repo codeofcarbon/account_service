@@ -34,7 +34,7 @@ A project aimed at familiarizing oneself with the Spring Security module, the ba
 ![adding payrolls](src/main/resources/screenshots/business_logic-adding_payrolls.png)
 ![adding payrolls 2](src/main/resources/screenshots/business_logic-adding_payrolls_2.png)
 ![adding payrolls 3](src/main/resources/screenshots/business_logic-adding_payrolls_3.png)
-![adding payrolls 4](src/main/resources/screenshots/business_logic-adding_payrolls_3.png)
+![adding payrolls 4](src/main/resources/screenshots/business_logic-adding_payrolls_4.png)
 
 ###### changing roles
 ![changing roles - negative](src/main/resources/screenshots/changing_roles-negative.png)
