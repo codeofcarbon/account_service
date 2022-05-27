@@ -11,7 +11,7 @@ A REST API simulating sending payrolls to the employee's account on the corporat
 A project aimed at familiarizing oneself with the Spring Security module, the basics of user authentication and authorization, logging security-related events and learning about various requirements of modern information security standards for web applications.
 
 ## Screenshots
-- A few screenshots from several different test cases to see how, roughly, the app works:
+- A few screenshots from several test cases to see how, roughly, the app works:
 
 #### *>>> user registration <<<*
 ![user registration - negative](src/main/resources/screenshots/user_registration-negative.png) 
